@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Web.Script.Serialization;
 
 using DesktopToast;
 using MircSharp;
+using System.IO;
 
 namespace Toasty
 {
@@ -18,27 +20,34 @@ namespace Toasty
 
         public static mToast Instance { get; } = new mToast();
 
-        static string Line1 = "";
-        static string Line2 = "";
+        static int ToastId { get; set; }
 
-        public string ToastResult { get; set; }
+        static string LogoFilePath { get; set; }
 
-        private async Task<string> ShowToastAsync()
+        static string Line1 { get; set; } = "mToast Line1 Default";
+        static string Line2 { get; set; } = "mToast Line2 Default";
+
+        static string OnActivatedCallback { get; set; } = "mToast.OnActivated";
+        static string OnCompleteCallback { get; set; } = "mToast.OnComplete";
+
+        static mToast()
         {
-            var request = new ToastRequest
+        }
+
+        public mToast()
+        {
+            NotificationActivatorBase.RegisterComType(typeof(NotificationActivator), OnActivated);
+            NotificationHelper.RegisterComServer(typeof(NotificationActivator), Assembly.GetExecutingAssembly().Location);
+
+            var image = Properties.Resources.mirclogo;
+            var path = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var imagePath = Path.Combine(path, "mIRC.png");
+            if (!File.Exists(imagePath))
             {
-                ToastTitle = "DesktopToast WPF Sample",
-                ToastBody = "This is a toast test.",
-                ToastLogoFilePath = string.Format("file:///{0}", @"C:\Users\Daniel\AppData\Roaming\mIRC\toastImageAndText.png"),// Path.GetFullPath("Resources /toast128.png")),
-                ShortcutFileName = AppId + ".lnk",
-                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
-                AppId = AppId,
-                ActivatorId = typeof(NotificationActivator).GUID // For Action Center of Windows 10
-            };
+                File.WriteAllBytes(imagePath, image);
+            }
 
-            var result = await ToastManager.ShowAsync(request);
-
-            return result.ToString();
+            LogoFilePath = imagePath;
         }
 
         private void OnActivated(string arguments, Dictionary<string, string> data)
@@ -47,26 +56,48 @@ namespace Toasty
             if ((arguments?.StartsWith("action=")).GetValueOrDefault())
             {
                 result = arguments.Substring("action=".Length);
-
-                //if ((data?.ContainsKey(MessageId)).GetValueOrDefault())
-                //    Dispatcher.Invoke(() => Message = data[MessageId]);
             }
-            //Dispatcher.Invoke(() => ActivationResult = result);
+
+            var serializer = new JavaScriptSerializer();
+
+            const string Format = "//if ($isalias({0})) {{ var %args = {1}, %data = {2} | noop ${0}(%args,%data) }}";
+            mInstance.Exec(string.Format(Format, OnActivatedCallback, arguments, serializer.Serialize(data)));
         }
 
-        static mToast()
+        private async Task<string> ShowToastAsync()
         {
-            //DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("mIRC");
-            //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+            var request = new ToastRequest
+            {
+                ToastTitle = Line1,
+                ToastBody = Line2,
+                ToastLogoFilePath = LogoFilePath,// Path.GetFullPath("Resources /toast128.png")),
+                ShortcutFileName = AppId + ".lnk",
+                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
+                AppId = AppId,
+                ActivatorId = typeof(NotificationActivator).GUID
+            };
 
+            var result = await ToastManager.ShowAsync(request);
+
+            return result.ToString();
         }
-
-        public mToast()
+        
+        private async Task<string> ShowCustomToastAsync(string xml)
         {
-            NotificationActivatorBase.RegisterComType(typeof(NotificationActivator), OnActivated);
-            NotificationHelper.RegisterComServer(typeof(NotificationActivator), Assembly.GetExecutingAssembly().Location);
-        }
+            var request = new ToastRequest
+            {
+                ToastXml = xml,
+                ShortcutFileName = AppId + ".lnk",
+                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
+                AppId = AppId,
+                ActivatorId = typeof(NotificationActivator).GUID
+            };
 
+            var result = await ToastManager.ShowAsync(request);
+
+            return result.ToString();
+        }
+        
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static void LoadDll(IntPtr loadinfo)
         {
@@ -86,7 +117,7 @@ namespace Toasty
 
             return mReturn.Continue;
         }
-        
+
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLine2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
@@ -96,99 +127,60 @@ namespace Toasty
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetLogoPath(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            LogoFilePath = mIRC.GetData(ref data);
+
+            return mReturn.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            OnActivatedCallback = mIRC.GetData(ref data);
+
+            return mReturn.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            OnCompleteCallback = mIRC.GetData(ref data);
+
+            return mReturn.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int ShowToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
+            int id = ++ToastId;
+
             Instance.ShowToastAsync().
-                ContinueWith(result => mInstance.Exec(String.Format("/echo -sag Result: {0}", result.Result)));
-            //.Wait();
+                ContinueWith(result => mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", OnCompleteCallback, id, result.Result)));
 
-            return mReturn.Continue;
-        }
-
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowToast(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            string input = mIRC.GetData(ref data);
-
-            //MyNotificationActivator.ShowToast(Line1, Line2);
-
-            return mReturn.Continue;
-        }
-
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowToast2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            string input = mIRC.GetData(ref data);
-
-            //MyNotificationActivator.ShowToast2(input);
-
-            return mReturn.Continue;
-        }
-
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int Test(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            string inStr = mIRC.GetData(ref data);
-            string outStr = String.Format("Returning from C#, data = {0}", inStr);
-
-            mInstance.Eval(out string eval, "$mircdir");
-            mInstance.Exec(String.Format("/echo -sag SendMessage() Exec() && Eval() test, $mircdir = {0}", eval));
-
-            mIRC.SetData(ref data, outStr);
+            mIRC.SetData(ref data, id.ToString());
 
             return mReturn.Return;
         }
 
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int ShowCustomToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            string xml = mIRC.GetData(ref data);
 
-        //[DllExport(CallingConvention = CallingConvention.StdCall)]
-        //public static int CreateShortcut(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        //{
-        //    try
-        //    {
-        //        using (ShellLink shortcut = new ShellLink())
-        //        {
-        //            shortcut.TargetPath = Process.GetCurrentProcess().MainModule.FileName;
-        //            shortcut.Arguments = "";
-        //            shortcut.AppUserModelID = "mIRC";
+            if (String.IsNullOrEmpty(xml))
+            {
+                return mReturn.Continue;
+            }
 
-        //            shortcut.Save(@"c:\users\daniel\desktop\mIRC.lnk");                    
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //    }
+            int id = ++ToastId;
 
-        //    return mReturn.Continue;
-        //}
+            Instance.ShowCustomToastAsync(xml).
+                ContinueWith(result => mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", OnCompleteCallback, id, result.Result)));
 
-        //void ReadShortCut()
-        //{
-        //    if (!File.Exists(textBox_ShortcutFile.Text))
-        //    {
-        //        MessageBox.Show("Such shortcut file does not exist.", "",
-        //                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //        return;
-        //    }
+            mIRC.SetData(ref data, id.ToString());
 
-        //    // Read shortcut file.
-        //    try
-        //    {
-        //        using (ShellLink shortcut = new ShellLink(textBox_ShortcutFile.Text))
-        //        {
-        //            textBox_TargetPath.Text = shortcut.TargetPath;
-        //            textBox_Arguments.Text = shortcut.Arguments;
-        //            textBox_AppUserModelID.Text = shortcut.AppUserModelID;
-
-        //            MessageBox.Show("Red shortcut file.", "",
-        //                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Could not read shortcut file. " + ex.Message, "",
-        //                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //    }
-        //}
+            return mReturn.Return;
+        }
     }
-
 }
