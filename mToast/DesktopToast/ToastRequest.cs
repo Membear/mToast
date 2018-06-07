@@ -146,7 +146,7 @@ namespace DesktopToast
 		/// Waiting duration before showing a toast after the shortcut file is installed (optional)
 		/// </summary>
 		[DataMember]
-		public TimeSpan WaitingDuration { get; set; }
+		public TimeSpan? WaitingDuration { get; set; }
 
 		#endregion
 

@@ -287,7 +287,7 @@ namespace DesktopToast
 		/// Checks and installs a shortcut file in Start menu.
 		/// </summary>
 		/// <param name="request">Toast request</param>
-		private static async Task CheckInstallShortcut(ToastRequest request)
+		public static async Task CheckInstallShortcut(ToastRequest request)
 		{
 			var shortcutFilePath = Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), // Not CommonStartMenu
@@ -318,7 +318,7 @@ namespace DesktopToast
 					appId: request.AppId,
 					activatorId: request.ActivatorId);
 
-				await Task.Delay((TimeSpan.Zero < request.WaitingDuration) ? request.WaitingDuration : _waitingDuration);
+                await Task.Delay(request.WaitingDuration ?? _waitingDuration);
 			}
 		}
 

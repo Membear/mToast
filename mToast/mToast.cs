@@ -24,8 +24,8 @@ namespace Toasty
 
         string LogoFilePath { get; set; }
 
-        string Line1 { get; set; } = "mToast Line1 Default";
-        string Line2 { get; set; } = "mToast Line2 Default";
+        string Line1 { get; set; } = "mIRC Toast Notifications";
+        string Line2 { get; set; } = "by Membear";
 
         string OnActivatedCallback { get; set; } = "mToast.OnActivated";
         string OnCompleteCallback { get; set; } = "mToast.OnComplete";
@@ -38,7 +38,7 @@ namespace Toasty
         {
             NotificationActivatorBase.RegisterComType(typeof(NotificationActivator), OnActivated);
             NotificationHelper.RegisterComServer(typeof(NotificationActivator), Assembly.GetExecutingAssembly().Location);
-
+            
             var image = Properties.Resources.mirclogo;
             var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var imagePath = Path.Combine(path, "mIRC.png");
@@ -53,12 +53,6 @@ namespace Toasty
 
         private void OnActivated(string arguments, Dictionary<string, string> data)
         {
-            var result = "Activated";
-            if ((arguments?.StartsWith("action=")).GetValueOrDefault())
-            {
-                result = arguments.Substring("action=".Length);
-            }
-
             var serializer = new JavaScriptSerializer();
             
             const string Format = "//if ($isalias({0})) {{ var %args = $unsafe({1}).undo, %data = $unsafe({2}).undo | noop ${0}(%args,%data) }}";
@@ -74,9 +68,7 @@ namespace Toasty
             {
                 ToastTitle = Line1,
                 ToastBody = Line2,
-                ToastLogoFilePath = LogoFilePath,// Path.GetFullPath("Resources /toast128.png")),
-                ShortcutFileName = AppId + ".lnk",
-                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
+                ToastLogoFilePath = LogoFilePath,
                 AppId = AppId,
                 ActivatorId = typeof(NotificationActivator).GUID
             };
@@ -86,13 +78,11 @@ namespace Toasty
             return result.ToString();
         }
         
-        private async Task<string> ShowCustomToastAsync(string xml)
+        private async Task<string> ShowToastAsync(string xml)
         {
             var request = new ToastRequest
             {
                 ToastXml = xml,
-                ShortcutFileName = AppId + ".lnk",
-                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
                 AppId = AppId,
                 ActivatorId = typeof(NotificationActivator).GUID
             };
@@ -119,6 +109,22 @@ namespace Toasty
             Instance.mInstance.Dispose();
 
             return UnloadReturn.Allow;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int Initialize(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            var req = new ToastRequest()
+            {
+                ShortcutFileName = AppId + ".lnk",
+                ShortcutTargetFilePath = Process.GetCurrentProcess().MainModule.FileName,
+                AppId = AppId,
+                ActivatorId = typeof(NotificationActivator).GUID,
+                WaitingDuration = TimeSpan.Zero,
+            };
+            _ = ToastManager.CheckInstallShortcut(req);
+
+            return mReturn.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
@@ -186,12 +192,12 @@ namespace Toasty
 
             int id = ++Instance.ToastId;
 
-            Instance.ShowCustomToastAsync(xml).
+            Instance.ShowToastAsync(xml).
                 ContinueWith(result => Instance.mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", Instance.OnCompleteCallback, id, result.Result)));
 
             mIRC.SetData(ref data, id.ToString());
 
             return mReturn.Return;
-        }
+        }        
     }
 }
