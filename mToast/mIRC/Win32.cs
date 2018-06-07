@@ -4,11 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
- 
+using System.Runtime.ConstrainedExecution;
+using System.Security;
+
 namespace MircSharp
 {
     class Win32
     {
+
+        public const int ERROR_ALREADY_EXISTS = 183;
+
         public const int SECURITY_MAX_SID_SIZE = 68;
         public const int SDDL_REVISION_1 = 1;
         public const uint INVALID_HANDLE_VALUE = 0xffffffff;
@@ -111,6 +116,15 @@ namespace MircSharp
         [In] int dwFileOffsetLow,
         [In] int dwNumberOfBytesToMap
         );
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
+        [SuppressUnmanagedCodeSecurity]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
         public static extern IntPtr MemCopy(IntPtr dest, IntPtr src, uint count);

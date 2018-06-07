@@ -105,6 +105,7 @@
     <Compile Include="DesktopToast\ToastRequest.cs" />
     <Compile Include="DesktopToast\ToastResult.cs" />
     <Compile Include="mIRC\mIRC.cs" />
+    <Compile Include="mIRC\Utilities.cs" />
     <Compile Include="mToast.cs" />
     <Compile Include="NotificationActivator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

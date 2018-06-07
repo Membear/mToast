@@ -16,54 +16,80 @@ namespace MircSharp
         public uint mBeta;
     }
 
-    class mReturn
+    static class mReturn
     {
-        public static int Halt = 0;
-        public static int Continue = 1;
-        public static int Command = 2;
-        public static int Return = 3;
+        public const int Halt = 0;
+        public const int Continue = 1;
+        public const int Command = 2;
+        public const int Return = 3;
     }
 
-    enum mTimeout : int
+    static class UnloadReturn
     {
-        Manual,
-        Timeout,
-        Exit
+        public const int Keep = 0;
+        public const int Allow = 1;
     }
 
-    public class mIRC
+    static class UnloadTimeout
+    {
+        public const int Manual = 0;
+        public const int Timeout = 1;
+        public const int Exit = 2;
+    }
+
+    public class mIRC : IDisposable
     {
         const int MIRC_MAP_SIZE = (8192 * sizeof(char));
-        const string MIRC_MAP_NAME = "mIRC32";
 
-        IntPtr hFile = IntPtr.Zero;
-        IntPtr pView = IntPtr.Zero;
+        readonly IntPtr hFileMap = IntPtr.Zero;
+        readonly IntPtr pView = IntPtr.Zero;
+        readonly IntPtr pLoadInfo;
 
-        const int cIndex = 32;
+        readonly int cIndex;
+
+        public LOADINFO LoadInfo { get; }
 
         public mIRC(IntPtr loadinfo)
         {
+            pLoadInfo = loadinfo;
             LoadInfo = (LOADINFO)Marshal.PtrToStructure(loadinfo, typeof(LOADINFO));
 
-            InitMapFile();
+            InitMapFile(ref cIndex, ref hFileMap, ref pView);
         }
 
-        public LOADINFO LoadInfo;
-
-        void InitMapFile()
+        void InitMapFile(ref int cIndex, ref IntPtr hFileMap, ref IntPtr pView)
         {
-            try
-            {
-                // Create file mapping, and give access to all users with access to the namespace
-                hFile = Win32.CreateFileMapping(Win32.INVALID_HANDLE_VALUE, IntPtr.Zero, Win32.PAGE_READWRITE, 0, MIRC_MAP_SIZE, MIRC_MAP_NAME);
-                if (hFile == IntPtr.Zero) { throw new Exception("CreateFileMapping", new Win32Exception(Marshal.GetLastWin32Error())); }
+            int error = 0;
+            var r = new Random();
+            
+            cIndex = r.Next(1, int.MaxValue);
 
-                // Map file and write something to it
-                pView = Win32.MapViewOfFile(hFile, Win32.SECTION_ALL_ACCESS, 0, 0, 0);
-                if (pView == IntPtr.Zero) { throw new Exception("MapViewOfFile", new Win32Exception(Marshal.GetLastWin32Error())); }
-            }
-            finally
+            do
             {
+                cIndex = cIndex % (int.MaxValue - 1) + 1;
+                string name = "mIRC" + cIndex;
+
+                hFileMap = Win32.CreateFileMapping(Win32.INVALID_HANDLE_VALUE, IntPtr.Zero, Win32.PAGE_READWRITE, 0, MIRC_MAP_SIZE, name);
+
+                if (hFileMap == IntPtr.Zero) return;
+
+                error = Marshal.GetLastWin32Error();
+
+                if (error == Win32.ERROR_ALREADY_EXISTS)
+                {
+                    Win32.CloseHandle(hFileMap);
+                }
+                else if (error > 0)
+                {
+                    return;
+                }                
+
+            } while (error == Win32.ERROR_ALREADY_EXISTS);
+
+            pView = Win32.MapViewOfFile(hFileMap, Win32.SECTION_ALL_ACCESS, 0, 0, 0);
+            if (pView == IntPtr.Zero)
+            {
+                Win32.CloseHandle(hFileMap);
             }
         }
 
@@ -118,5 +144,44 @@ namespace MircSharp
 
             Marshal.FreeHGlobal(pData);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                if (pView != IntPtr.Zero) Win32.UnmapViewOfFile(pView);
+                if (hFileMap != IntPtr.Zero) Win32.CloseHandle(hFileMap);
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        ~mIRC()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

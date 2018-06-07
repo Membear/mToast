@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -8,7 +9,6 @@ using System.Web.Script.Serialization;
 
 using DesktopToast;
 using MircSharp;
-using System.IO;
 
 namespace Toasty
 {
@@ -16,19 +16,19 @@ namespace Toasty
     {
         const string AppId = "mIRC";
 
-        static mIRC mInstance = null;
-
         public static mToast Instance { get; } = new mToast();
 
-        static int ToastId { get; set; }
+        mIRC mInstance { get; set; }
 
-        static string LogoFilePath { get; set; }
+        int ToastId { get; set; }
 
-        static string Line1 { get; set; } = "mToast Line1 Default";
-        static string Line2 { get; set; } = "mToast Line2 Default";
+        string LogoFilePath { get; set; }
 
-        static string OnActivatedCallback { get; set; } = "mToast.OnActivated";
-        static string OnCompleteCallback { get; set; } = "mToast.OnComplete";
+        string Line1 { get; set; } = "mToast Line1 Default";
+        string Line2 { get; set; } = "mToast Line2 Default";
+
+        string OnActivatedCallback { get; set; } = "mToast.OnActivated";
+        string OnCompleteCallback { get; set; } = "mToast.OnComplete";
 
         static mToast()
         {
@@ -40,8 +40,9 @@ namespace Toasty
             NotificationHelper.RegisterComServer(typeof(NotificationActivator), Assembly.GetExecutingAssembly().Location);
 
             var image = Properties.Resources.mirclogo;
-            var path = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var imagePath = Path.Combine(path, "mIRC.png");
+
             if (!File.Exists(imagePath))
             {
                 File.WriteAllBytes(imagePath, image);
@@ -59,9 +60,12 @@ namespace Toasty
             }
 
             var serializer = new JavaScriptSerializer();
-
-            const string Format = "//if ($isalias({0})) {{ var %args = {1}, %data = {2} | noop ${0}(%args,%data) }}";
-            mInstance.Exec(string.Format(Format, OnActivatedCallback, arguments, serializer.Serialize(data)));
+            
+            const string Format = "//if ($isalias({0})) {{ var %args = $unsafe({1}).undo, %data = $unsafe({2}).undo | noop ${0}(%args,%data) }}";
+            mInstance.Exec(string.Format(Format,
+                OnActivatedCallback,
+                string.IsNullOrEmpty(arguments) ? "$null" : Utilities.Base64Encode(arguments),
+                data.Count == 0 ? "$null" : Utilities.Base64Encode(serializer.Serialize(data))));
         }
 
         private async Task<string> ShowToastAsync()
@@ -101,19 +105,26 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static void LoadDll(IntPtr loadinfo)
         {
-            mInstance = new mIRC(loadinfo);
+            Instance.mInstance = new mIRC(loadinfo);
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int UnloadDll(int mTimeout)
         {
-            return 1;
+            if (mTimeout == UnloadTimeout.Timeout)
+            {
+                return UnloadReturn.Keep;
+            }
+
+            Instance.mInstance.Dispose();
+
+            return UnloadReturn.Allow;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLine1(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Line1 = mIRC.GetData(ref data);
+            Instance.Line1 = mIRC.GetData(ref data);
 
             return mReturn.Continue;
         }
@@ -121,7 +132,7 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLine2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Line2 = mIRC.GetData(ref data);
+            Instance.Line2 = mIRC.GetData(ref data);
 
             return mReturn.Continue;
         }
@@ -129,7 +140,7 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLogoPath(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            LogoFilePath = mIRC.GetData(ref data);
+            Instance.LogoFilePath = mIRC.GetData(ref data);
 
             return mReturn.Continue;
         }
@@ -137,7 +148,7 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            OnActivatedCallback = mIRC.GetData(ref data);
+            Instance.OnActivatedCallback = mIRC.GetData(ref data);
 
             return mReturn.Continue;
         }
@@ -145,7 +156,7 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            OnCompleteCallback = mIRC.GetData(ref data);
+            Instance.OnCompleteCallback = mIRC.GetData(ref data);
 
             return mReturn.Continue;
         }
@@ -153,10 +164,10 @@ namespace Toasty
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int ShowToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            int id = ++ToastId;
+            int id = ++Instance.ToastId;
 
             Instance.ShowToastAsync().
-                ContinueWith(result => mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", OnCompleteCallback, id, result.Result)));
+                ContinueWith(result => Instance.mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", Instance.OnCompleteCallback, id, result.Result)));
 
             mIRC.SetData(ref data, id.ToString());
 
@@ -173,10 +184,10 @@ namespace Toasty
                 return mReturn.Continue;
             }
 
-            int id = ++ToastId;
+            int id = ++Instance.ToastId;
 
             Instance.ShowCustomToastAsync(xml).
-                ContinueWith(result => mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", OnCompleteCallback, id, result.Result)));
+                ContinueWith(result => Instance.mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", Instance.OnCompleteCallback, id, result.Result)));
 
             mIRC.SetData(ref data, id.ToString());
 

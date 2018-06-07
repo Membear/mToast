@@ -11,13 +11,13 @@ alias mtoast.test {
 
 ; Toasts for private messages
 on *:text:*:?:{
-  if ($appactive) || ($appstate isin maximized.full.normal) return
+  if ($appactive) return
 
   var %logo = $iif($user.icon($nick),$v1,$mirc.png)
 
-  var %launch.args = action=msg&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
-  var %reply.args = action=reply&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
-  var %view.args = action=view&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
+  var %launch.args = callback=mToast.pm.callback&amp;action=launch&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
+  var %reply.args = callback=mToast.pm.callback&amp;action=reply&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
+  var %view.args = callback=mToast.pm.callback&amp;action=view&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
   var %header.args = %view.args
 
   var %xml = <toast launch=" $+ %launch.args $+ "><header id=" $+ $nick $+ " title=" $+ $nick $+ " arguments=" $+ %header.args $+ "/><visual><binding template="ToastGeneric"><text> $+ $1- $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
@@ -25,10 +25,34 @@ on *:text:*:?:{
   var %id = $mToast.ShowCustomToast(%xml)
 }
 
+; Callback for private message toast
+alias mToast.pm.callback {
+  var %args = $1, %data = $2
+
+  if ($regex(%args,/action=([^&]+)&cid=([^&]+)&nick=([^&]+)/)) {
+    var %action = $regml(1)
+    var %cid = $regml(2)
+    var %nick = $regml(3)
+
+    if (%action == reply) && ($regex(%data,/^{"tbReply":"(.+)"}$/)) {
+      var %reply = $regml(1)
+
+      scid %cid
+      msg %nick %reply
+    }
+    else if (%action == view) {
+      scid %cid
+      query %nick
+      showmirc -s
+    }
+  }
+}
+
 ; User icons
 alias -l user.icon {
-  if ($1 == $me) return $mircdiruser.icons\clown.jpg
+  if ($1 == $me) return $scriptdiruser.icons\clown.jpg
 }
+
 
 ;; $mToast.ShowToast(@Line1, @Line2, [@Image])
 ;;
@@ -113,10 +137,10 @@ alias mToast.SetOnCompleteCallback {
   dll $mToast_dll SetOnCompleteCallback %callback
 }
 
-
 ;; $mToast.OnActivated(@Args, @Data)
 ;;
 ;;    Default callback for OnActivated event
+;;    Routes to a custom callback specified in @Args as callback=<alias>
 ;;
 ;;    @Args - String
 ;;        Arguments defined on selected action
@@ -125,29 +149,15 @@ alias mToast.SetOnCompleteCallback {
 ;;        User input data
 ;;
 alias mToast.OnActivated {
-  var %args = $1
-  var %data = $2
-
-  if ($regex(%args,/action=([^&]+)&cid=([^&]+)&nick=([^&]+)/)) {
-    var %action = $regml(1)
-    var %cid = $regml(2)
-    var %nick = $regml(3)
-
-    if (%action == reply) && ($regex(%data,/^{"tbReply":"(.+)"}$/)) {
-      var %reply = $regml(1)
-
-      scid %cid
-      msg %nick %reply
-    }
-    else if (%action == view) {
-      scid %cid
-      query %nick
-      showmirc -s
-    }
-  }
+  var %args = $1, %data = $2
 
   if ($mToast_debug) echo -sag mToast.OnActivated Args = %args
   if ($mToast_debug) echo -sag mToast.OnActivated Data = %data
+
+  if ($regex(%args,/callback=([^&]+)/i)) {
+    var %eval = $ $+ $regml(1) $+ ( % $+ args $chr(44) % $+ data )
+    noop $(%eval,2)
+  }
 }
 
 ;; $mToast.OnComplete(@Id, @Result)
