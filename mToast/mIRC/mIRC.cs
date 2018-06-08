@@ -9,14 +9,14 @@ namespace MircSharp
     [StructLayout(LayoutKind.Sequential)]
     public struct LOADINFO
     {
-        public uint mVersion;
-        public IntPtr mHwnd;
-        public bool mKeep;
-        public bool mUnicode;
-        public uint mBeta;
+        public readonly uint mVersion;
+        public readonly IntPtr mHwnd;
+        public readonly bool mKeep;
+        public readonly bool mUnicode;
+        public readonly uint mBeta;
     }
 
-    static class mReturn
+    static class ReturnType
     {
         public const int Halt = 0;
         public const int Continue = 1;
@@ -45,7 +45,7 @@ namespace MircSharp
         readonly IntPtr pView = IntPtr.Zero;
         readonly IntPtr pLoadInfo;
 
-        readonly int cIndex;
+        readonly IntPtr cIndex;
 
         public LOADINFO LoadInfo { get; }
 
@@ -57,39 +57,39 @@ namespace MircSharp
             InitMapFile(ref cIndex, ref hFileMap, ref pView);
         }
 
-        void InitMapFile(ref int cIndex, ref IntPtr hFileMap, ref IntPtr pView)
+        void InitMapFile(ref IntPtr cIndex, ref IntPtr hFileMap, ref IntPtr pView)
         {
             int error = 0;
             var r = new Random();
             
-            cIndex = r.Next(1, int.MaxValue);
+            cIndex = (IntPtr)r.Next(1, int.MaxValue);
 
             do
             {
-                cIndex = cIndex % (int.MaxValue - 1) + 1;
+                cIndex = (IntPtr)((int)cIndex % (int.MaxValue - 1) + 1);
                 string name = "mIRC" + cIndex;
 
-                hFileMap = Win32.CreateFileMapping(Win32.INVALID_HANDLE_VALUE, IntPtr.Zero, Win32.PAGE_READWRITE, 0, MIRC_MAP_SIZE, name);
+                hFileMap = NativeMethods.CreateFileMapping(NativeMethods.INVALID_HANDLE_VALUE, IntPtr.Zero, FileMapProtection.PageReadWrite, 0, MIRC_MAP_SIZE, name);
 
                 if (hFileMap == IntPtr.Zero) return;
 
                 error = Marshal.GetLastWin32Error();
 
-                if (error == Win32.ERROR_ALREADY_EXISTS)
+                if (error == NativeMethods.ERROR_ALREADY_EXISTS)
                 {
-                    Win32.CloseHandle(hFileMap);
+                    NativeMethods.CloseHandle(hFileMap);
                 }
                 else if (error > 0)
                 {
                     return;
                 }                
 
-            } while (error == Win32.ERROR_ALREADY_EXISTS);
+            } while (error == NativeMethods.ERROR_ALREADY_EXISTS);
 
-            pView = Win32.MapViewOfFile(hFileMap, Win32.SECTION_ALL_ACCESS, 0, 0, 0);
+            pView = NativeMethods.MapViewOfFile(hFileMap, NativeMethods.SECTION_ALL_ACCESS, 0, 0, 0);
             if (pView == IntPtr.Zero)
             {
-                Win32.CloseHandle(hFileMap);
+                NativeMethods.CloseHandle(hFileMap);
             }
         }
 
@@ -98,11 +98,11 @@ namespace MircSharp
             IntPtr pData = IntPtr.Zero;
 
             pData = Marshal.StringToHGlobalAnsi(String.Format("{0}\0", cmd));
-            Win32.MemCopy(pView, pData, (uint)(cmd.Length + 1));
+            NativeMethods.MemCopy(pView, pData, (uint)(cmd.Length + 1));
 
             Marshal.FreeHGlobal(pData);
 
-            return Win32.SendMessage(LoadInfo.mHwnd, Win32.WM_MCOMMAND, 0, cIndex) != 0;
+            return NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MCOMMAND, IntPtr.Zero, cIndex) != IntPtr.Zero;
         }
 
         public bool Eval(out string output, string input)
@@ -111,11 +111,11 @@ namespace MircSharp
 
             input = input + '\0';
             pData = Marshal.StringToHGlobalAnsi(input);
-            Win32.MemCopy(pView, pData, (uint)input.Length);
+            NativeMethods.MemCopy(pView, pData, (uint)input.Length);
 
-            var ret = Win32.SendMessage(LoadInfo.mHwnd, Win32.WM_MEVALUATE, 0, cIndex);
+            var ret = NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MEVALUATE, IntPtr.Zero, cIndex);
 
-            bool success = ret == 1;
+            bool success = ret != IntPtr.Zero;
 
             if (success)
             {
@@ -128,21 +128,6 @@ namespace MircSharp
             }
 
             return false;
-        }
-
-        public static string GetData(ref IntPtr data)
-        {
-            return Marshal.PtrToStringAnsi(data);
-        }
-
-        public static void SetData(ref IntPtr data, string output)
-        {
-            IntPtr pData = IntPtr.Zero;
-
-            pData = Marshal.StringToHGlobalAnsi(String.Format("{0}\0", output));
-            Win32.MemCopy(data, pData, (uint)(output.Length + 1));
-
-            Marshal.FreeHGlobal(pData);
         }
 
         #region IDisposable Support
@@ -160,8 +145,8 @@ namespace MircSharp
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // TODO: set large fields to null.
 
-                if (pView != IntPtr.Zero) Win32.UnmapViewOfFile(pView);
-                if (hFileMap != IntPtr.Zero) Win32.CloseHandle(hFileMap);
+                if (pView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(pView);
+                if (hFileMap != IntPtr.Zero) NativeMethods.CloseHandle(hFileMap);
 
                 disposedValue = true;
             }

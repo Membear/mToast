@@ -3,8 +3,8 @@ alias -l mToast_debug return $false
 alias -l mirc.png return $scriptdirmIRC.png
 
 ; Example toast
-alias mtoast.test {
-  var %xml = <toast launch="action=viewConversation&amp;conversationId=5"><visual><binding template="ToastGeneric"><text>Membear sent you a picture</text><text>Check this out, The Enchantments!</text><image src=" $+ $mirc.png $+ " /><image src=" $+ $mirc.png $+ " placement="appLogoOverride" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments="action=reply&amp;conversationId=5" /><action content="Like" arguments="action=like&amp;conversationId=5" /><action content="View" arguments="action=viewImage&amp;imageUrl=https%3A%2F%2Fpicsum.photos%2F364%2F202%3Fimage%3D883" /></actions></toast>
+alias mtoast.example {
+  var %xml = <toast launch="action=viewConversation&amp;conversationId=5"><visual><binding template="ToastGeneric"><text>Membear sent you a picture</text><text>Check this out, The Enchantments!</text><image src=" $+ $mirc.png $+ " /><image src=" $+ $mirc.png $+ " placement="appLogoOverride" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments="action=reply&amp;conversationId=5" /><action content="Like" arguments="action=like&amp;conversationId=5" /><action content="View" arguments="action=viewImage&amp;imageUrl=https://picsum.photos/364/202/image/883" /></actions></toast>
 
   noop $mToast.ShowCustomToast(%xml)
 }
@@ -51,6 +51,20 @@ alias mToast.pm.callback {
 ; User icons
 alias -l user.icon {
   if ($1 == $me) return $scriptdiruser.icons\clown.jpg
+}
+
+; Register com and install shortcut
+on *:start:{
+  mToast.Initialize
+}
+
+
+;; /mToast.Initialize
+;;
+;;    Registers Com server and installs shortcut
+;;    
+alias mToast.Initialize {
+  dll $mToast_dll Initialize
 }
 
 
@@ -177,8 +191,7 @@ alias mToast.OnActivated {
 ;;        -Failed
 ;;
 alias mToast.OnComplete {
-  var %id = $1
-  var %result = $2
+  var %id = $1, %result = $2
 
   if ($mToast_debug) echo -sag mToast.OnComplete Id = %id :: Result = %result
 }

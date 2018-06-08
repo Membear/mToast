@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 using DesktopToast;
 
-namespace Toasty
+namespace MircSharp.ToastNotifications
 {
     /// <summary>
     /// Inherited class of notification activator (for Action Center of Windows 10)

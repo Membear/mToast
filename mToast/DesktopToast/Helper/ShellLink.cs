@@ -17,12 +17,18 @@ namespace DesktopToast.Helper
 	/// </remarks>
 	internal class ShellLink : IDisposable
 	{
-		#region Win32 and COM
+        #region Win32 and COM
 
-		/// <summary>
-		/// IShellLink Interface
-		/// </summary>
-		[ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private static class NativeMethods
+        {
+            [DllImport("Ole32.dll", PreserveSig = false)]
+            public extern static void PropVariantClear([In, Out] PropVariant pvar); // Or ref
+        }
+
+        /// <summary>
+        /// IShellLink Interface
+        /// </summary>
+        [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 		private interface IShellLinkW
 		{
 			uint GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile,
@@ -80,9 +86,9 @@ namespace DesktopToast.Helper
 		private struct WIN32_FIND_DATAW
 		{
 			public uint dwFileAttributes;
-			public ComTypes.FILETIME ftCreationTime;
-			public ComTypes.FILETIME ftLastAccessTime;
-			public ComTypes.FILETIME ftLastWriteTime;
+			[NonSerialized] public ComTypes.FILETIME ftCreationTime;
+            [NonSerialized] public ComTypes.FILETIME ftLastAccessTime;
+            [NonSerialized] public ComTypes.FILETIME ftLastWriteTime;
 			public uint nFileSizeHigh;
 			public uint nFileSizeLow;
 			public uint dwReserved0;
@@ -263,27 +269,24 @@ namespace DesktopToast.Helper
 
 			public void Dispose()
 			{
-				PropVariantClear(this);
+				NativeMethods.PropVariantClear(this);
 				GC.SuppressFinalize(this);
 			}
 
 			#endregion
 		}
-
-		[DllImport("Ole32.dll", PreserveSig = false)]
-		private extern static void PropVariantClear([In, Out] PropVariant pvar); // Or ref
-
-		/// <summary>
-		/// Property key of Arguments
-		/// </summary>
-		/// <remarks>
-		/// Name = System.Link.Arguments
-		/// ShellPKey = PKEY_Link_Arguments
-		/// FormatID = 436F2667-14E2-4FEB-B30A-146C53B5B674
-		/// PropID = 100
-		/// Type = String (VT_LPWSTR)
-		/// </remarks>
-		private static readonly PropertyKey argumentsKey = new PropertyKey("{436F2667-14E2-4FEB-B30A-146C53B5B674}", 100);
+        
+        /// <summary>
+        /// Property key of Arguments
+        /// </summary>
+        /// <remarks>
+        /// Name = System.Link.Arguments
+        /// ShellPKey = PKEY_Link_Arguments
+        /// FormatID = 436F2667-14E2-4FEB-B30A-146C53B5B674
+        /// PropID = 100
+        /// Type = String (VT_LPWSTR)
+        /// </remarks>
+        private static readonly PropertyKey argumentsKey = new PropertyKey("{436F2667-14E2-4FEB-B30A-146C53B5B674}", 100);
 
 		/// <summary>
 		/// Property key of AppUserModelID

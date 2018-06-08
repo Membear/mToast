@@ -8,9 +8,8 @@ using System.Runtime.InteropServices;
 using System.Web.Script.Serialization;
 
 using DesktopToast;
-using MircSharp;
 
-namespace Toasty
+namespace MircSharp.ToastNotifications
 {
     class mToast
     {
@@ -124,47 +123,47 @@ namespace Toasty
             };
             _ = ToastManager.CheckInstallShortcut(req);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLine1(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Instance.Line1 = mIRC.GetData(ref data);
+            Instance.Line1 = Utilities.GetData(ref data);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLine2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Instance.Line2 = mIRC.GetData(ref data);
+            Instance.Line2 = Utilities.GetData(ref data);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetLogoPath(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Instance.LogoFilePath = mIRC.GetData(ref data);
+            Instance.LogoFilePath = Utilities.GetData(ref data);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Instance.OnActivatedCallback = mIRC.GetData(ref data);
+            Instance.OnActivatedCallback = Utilities.GetData(ref data);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            Instance.OnCompleteCallback = mIRC.GetData(ref data);
+            Instance.OnCompleteCallback = Utilities.GetData(ref data);
 
-            return mReturn.Continue;
+            return ReturnType.Continue;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
@@ -175,19 +174,19 @@ namespace Toasty
             Instance.ShowToastAsync().
                 ContinueWith(result => Instance.mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", Instance.OnCompleteCallback, id, result.Result)));
 
-            mIRC.SetData(ref data, id.ToString());
+            Utilities.SetData(ref data, id.ToString());
 
-            return mReturn.Return;
+            return ReturnType.Return;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int ShowCustomToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            string xml = mIRC.GetData(ref data);
+            string xml = Utilities.GetData(ref data);
 
             if (String.IsNullOrEmpty(xml))
             {
-                return mReturn.Continue;
+                return ReturnType.Continue;
             }
 
             int id = ++Instance.ToastId;
@@ -195,9 +194,9 @@ namespace Toasty
             Instance.ShowToastAsync(xml).
                 ContinueWith(result => Instance.mInstance.Exec(String.Format("//if ($isalias({0})) {{ {0} {1} {2} }}", Instance.OnCompleteCallback, id, result.Result)));
 
-            mIRC.SetData(ref data, id.ToString());
+            Utilities.SetData(ref data, id.ToString());
 
-            return mReturn.Return;
+            return ReturnType.Return;
         }        
     }
 }
