@@ -1,8 +1,5 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Windows.Forms;
 
 namespace MircSharp
 {
@@ -93,6 +90,14 @@ namespace MircSharp
             }
         }
 
+        /// <summary>
+        /// Sends a command to mIRC by use of SendMessage
+        /// 
+        /// **Warning**: RPC_E_CANTCALLOUT_ININPUTSYNCCALL may occur if the dll is reentered as a result of this call,
+        ///                avoid error by calling a /timer
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <returns></returns>
         public bool Exec(string cmd)
         {
             IntPtr pData = IntPtr.Zero;

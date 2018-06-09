@@ -148,6 +148,12 @@ namespace DesktopToast
 		[DataMember]
 		public TimeSpan? WaitingDuration { get; set; }
 
+        [DataMember]
+        public string Group { get; set; }
+
+        [DataMember]
+        public string Tag { get; set; }
+
 		#endregion
 
 		#region Internal Property

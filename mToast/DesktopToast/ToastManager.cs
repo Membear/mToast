@@ -38,7 +38,7 @@ namespace DesktopToast
 			if (document == null)
 				return ToastResult.Invalid;
 
-			return await ShowBaseAsync(document, request.AppId);
+			return await ShowBaseAsync(document, request.AppId, request.Group, request.Tag);
 		}
 
 		/// <summary>
@@ -332,10 +332,14 @@ namespace DesktopToast
 		/// <param name="document">Toast document</param>
 		/// <param name="appId">AppUserModelID</param>
 		/// <returns>Result of showing a toast</returns>
-		private static async Task<ToastResult> ShowBaseAsync(XmlDocument document, string appId)
+		private static async Task<ToastResult> ShowBaseAsync(XmlDocument document, string appId, string group = default(string), string tag = default(string))
 		{
-			// Create a toast and prepare to handle toast events.
-			var toast = new ToastNotification(document);
+            // Create a toast and prepare to handle toast events.
+            var toast = new ToastNotification(document)
+            {
+                Group = group,
+                Tag = tag
+            };
 			var tcs = new TaskCompletionSource<ToastResult>();
 
 			TypedEventHandler<ToastNotification, object> activated = (sender, e) =>
