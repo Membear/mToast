@@ -92,12 +92,13 @@ namespace MircSharp
 
         /// <summary>
         /// Sends a command to mIRC by use of SendMessage
-        /// 
-        /// **Warning**: RPC_E_CANTCALLOUT_ININPUTSYNCCALL may occur if the dll is reentered as a result of this call,
-        ///                avoid error by calling a /timer
         /// </summary>
-        /// <param name="cmd"></param>
-        /// <returns></returns>
+        /// <exception cref="RPC_E_CANTCALLOUT_ININPUTSYNCCALL">
+        /// May occur if the dll is reentered as a result of this call.
+        /// Avoid by calling /timer or starting a new thread.
+        /// </exception>
+        /// <param name="cmd">Command to send</param>
+        /// <returns>Success</returns>
         public bool Exec(string cmd)
         {
             IntPtr pData = IntPtr.Zero;

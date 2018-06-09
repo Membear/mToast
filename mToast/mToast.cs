@@ -92,7 +92,32 @@ namespace MircSharp.ToastNotifications
 
             return result.ToString();
         }
-        
+
+        private async Task<string> ShowToastAsyncByJson(string requestJson)
+        {
+            try
+            {
+                var request = new ToastRequest(requestJson)
+                {
+                    AppId = AppId,
+                    ActivatorId = typeof(NotificationActivator).GUID
+                };
+
+                if (request.Group != default(string)) request.Group = Group;
+                if (request.Tag != default(string)) request.Tag = ToastId.ToString();
+                if (request.ToastLogoFilePath != default(string)) request.ToastLogoFilePath = LogoFilePath;
+
+                var result = await ToastManager.ShowAsync(request);
+
+                return result.ToString();
+            }
+            catch (Exception e)
+            {
+                mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
+                return ToastResult.Invalid.ToString();
+            }
+        }
+
         private async Task<string> ShowToastAsync(string xml)
         {
             var request = new ToastRequest
@@ -207,7 +232,7 @@ namespace MircSharp.ToastNotifications
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowCustomToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        public static int ShowXmlToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             string xml = Utilities.GetData(ref data);
 
@@ -225,7 +250,28 @@ namespace MircSharp.ToastNotifications
             Utilities.SetData(ref data, id.ToString());
 
             return ReturnType.Return;
-        }        
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int ShowJsonToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            string json = Utilities.GetData(ref data);
+
+            if (String.IsNullOrEmpty(json))
+            {
+                return ReturnType.Continue;
+            }
+
+            int id = ++Instance.ToastId;
+
+            const string Format = "/.timer 1 0 if ($isalias({0})) {{ {0} {1} {2} }}";
+            Instance.ShowToastAsyncByJson(json).
+                ContinueWith(result => Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, id, result.Result)));
+
+            Utilities.SetData(ref data, id.ToString());
+
+            return ReturnType.Return;
+        }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int Clear(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
