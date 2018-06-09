@@ -335,11 +335,9 @@ namespace DesktopToast
 		private static async Task<ToastResult> ShowBaseAsync(XmlDocument document, string appId, string group = default(string), string tag = default(string))
 		{
             // Create a toast and prepare to handle toast events.
-            var toast = new ToastNotification(document)
-            {
-                Group = group,
-                Tag = tag
-            };
+            var toast = new ToastNotification(document);
+            if (group != null) { toast.Group = group; }
+            if (tag != null) { toast.Tag = tag; }
 			var tcs = new TaskCompletionSource<ToastResult>();
 
 			TypedEventHandler<ToastNotification, object> activated = (sender, e) =>

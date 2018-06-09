@@ -24,10 +24,34 @@ namespace MircSharp.ToastNotifications
         int ToastId { get; set; }
 
         string Group { get; set; } = "mToast";
-        string LogoFilePath { get; set; }
 
-        string Line1 { get; set; } = "mIRC Toast Notifications";
-        string Line2 { get; set; } = "by Membear";
+        bool _revertTag;
+
+        string _tag;
+        string NextTag {
+            get
+            {
+                if (_revertTag)
+                {
+                    _revertTag = false;
+
+                    var _temp = _tag;
+                    _tag = ToastId.ToString();
+
+
+                    return _temp;
+                }
+
+                return (++ToastId).ToString();            
+            }
+            set
+            {
+                _revertTag = true;
+                _tag = value;
+            }
+        }
+
+        string LogoFilePath { get; set; }        
 
         string OnActivatedCallback { get; set; } = "mToast.OnActivated";
         string OnCompleteCallback { get; set; } = "mToast.OnComplete";
@@ -75,64 +99,78 @@ namespace MircSharp.ToastNotifications
                 data.Count == 0 ? "$null" : Utilities.Base64Encode(dataString)));
         }
 
-        private async Task<string> ShowToastAsync()
+        //private async Task<string> ShowToastAsync()
+        //{
+        //    var request = new ToastRequest
+        //    {
+        //        Group = Group,
+        //        Tag = ToastId.ToString(),
+        //        ToastTitle = Line1,
+        //        ToastBody = Line2,
+        //        ToastLogoFilePath = LogoFilePath,
+        //        AppId = AppId,
+        //        ActivatorId = typeof(NotificationActivator).GUID
+        //    };
+
+        //    mInstance.Exec(String.Format("/.timer 1 0 echo -ag {0}", request.Export()));
+
+        //    var result = await ToastManager.ShowAsync(request);
+
+        //    return result.ToString();
+        //}
+
+        //private async Task<string> ShowToastAsyncByJson(string requestJson)
+        //{
+        //    try
+        //    {
+        //        var request = new ToastRequest(requestJson)
+        //        {
+        //            AppId = AppId,
+        //            ActivatorId = typeof(NotificationActivator).GUID
+        //        };
+
+        //        if (request.Group != default(string)) request.Group = Group;
+        //        if (request.Tag != default(string)) request.Tag = ToastId.ToString();
+        //        if (request.ToastLogoFilePath != default(string)) request.ToastLogoFilePath = LogoFilePath;
+
+        //        var result = await ToastManager.ShowAsync(request);
+
+        //        return result.ToString();
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
+        //        return ToastResult.Invalid.ToString();
+        //    }
+        //}
+
+        private async Task<(ToastResult, ToastRequest)> ShowToastAsync(ToastRequest request)
         {
-            var request = new ToastRequest
-            {
-                Group = Group,
-                Tag = ToastId.ToString(),
-                ToastTitle = Line1,
-                ToastBody = Line2,
-                ToastLogoFilePath = LogoFilePath,
-                AppId = AppId,
-                ActivatorId = typeof(NotificationActivator).GUID
-            };
+            (ToastResult res, ToastRequest req) tuple;
 
-            var result = await ToastManager.ShowAsync(request);
+            tuple.req = request;
+            tuple.res = await ToastManager.ShowAsync(request);
 
-            return result.ToString();
+            return tuple;
         }
 
-        private async Task<string> ShowToastAsyncByJson(string requestJson)
-        {
-            try
-            {
-                var request = new ToastRequest(requestJson)
-                {
-                    AppId = AppId,
-                    ActivatorId = typeof(NotificationActivator).GUID
-                };
+        //private async Task<string> ShowToastAsync(string xml)
+        //{
+        //    var request = new ToastRequest
+        //    {
+        //        Group = Group,
+        //        Tag = ToastId.ToString(),
+        //        ToastXml = xml,
+        //        AppId = AppId,
+        //        ActivatorId = typeof(NotificationActivator).GUID
+        //    };
 
-                if (request.Group != default(string)) request.Group = Group;
-                if (request.Tag != default(string)) request.Tag = ToastId.ToString();
-                if (request.ToastLogoFilePath != default(string)) request.ToastLogoFilePath = LogoFilePath;
+        //    mInstance.Exec(String.Format("/.timer 1 0 echo -ag {0}", request.Export()));
 
-                var result = await ToastManager.ShowAsync(request);
+        //    var result = await ToastManager.ShowAsync(request);
 
-                return result.ToString();
-            }
-            catch (Exception e)
-            {
-                mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
-                return ToastResult.Invalid.ToString();
-            }
-        }
-
-        private async Task<string> ShowToastAsync(string xml)
-        {
-            var request = new ToastRequest
-            {
-                Group = Group,
-                Tag = ToastId.ToString(),
-                ToastXml = xml,
-                AppId = AppId,
-                ActivatorId = typeof(NotificationActivator).GUID
-            };
-
-            var result = await ToastManager.ShowAsync(request);
-
-            return result.ToString();
-        }
+        //    return result.ToString();
+        //}
         
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static void LoadDll(IntPtr loadinfo)
@@ -169,29 +207,29 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int SetLine1(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            Instance.Line1 = Utilities.GetData(ref data);
+        //[DllExport(CallingConvention = CallingConvention.StdCall)]
+        //public static int SetLine1(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        //{
+        //    Instance.Line1 = Utilities.GetData(ref data);
 
-            return ReturnType.Continue;
-        }
+        //    return ReturnType.Continue;
+        //}
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int SetLine2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            Instance.Line2 = Utilities.GetData(ref data);
+        //[DllExport(CallingConvention = CallingConvention.StdCall)]
+        //public static int SetLine2(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        //{
+        //    Instance.Line2 = Utilities.GetData(ref data);
 
-            return ReturnType.Continue;
-        }
+        //    return ReturnType.Continue;
+        //}
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int SetLogoPath(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-        {
-            Instance.LogoFilePath = Utilities.GetData(ref data);
+        //[DllExport(CallingConvention = CallingConvention.StdCall)]
+        //public static int SetLogoPath(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        //{
+        //    Instance.LogoFilePath = Utilities.GetData(ref data);
 
-            return ReturnType.Continue;
-        }
+        //    return ReturnType.Continue;
+        //}
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
@@ -208,7 +246,7 @@ namespace MircSharp.ToastNotifications
 
             return ReturnType.Continue;
         }
-        
+
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int SetGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
@@ -218,57 +256,90 @@ namespace MircSharp.ToastNotifications
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        public static int SetNextTag(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
-            int id = ++Instance.ToastId;
+            var _tag = Utilities.GetData(ref data);
+            if (string.IsNullOrWhiteSpace(_tag))
+            {
+                _ = Instance.NextTag;
+            }
+            else
+            {
+                Instance.NextTag = _tag;
+            }
 
-            const string Format = "/.timer 1 0 if ($isalias({0})) {{ {0} {1} {2} }}";
-            Instance.ShowToastAsync().
-                ContinueWith(result => Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, id, result.Result)));
-
-            Utilities.SetData(ref data, id.ToString());
-
-            return ReturnType.Return;
-        }
+            return ReturnType.Continue;
+        }        
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowXmlToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        public static int ShowToastXml(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             string xml = Utilities.GetData(ref data);
 
-            if (String.IsNullOrEmpty(xml))
+            if (String.IsNullOrWhiteSpace(xml))
             {
                 return ReturnType.Continue;
             }
-
-            int id = ++Instance.ToastId;
+            
+            var request = new ToastRequest
+            {
+                Group = Instance.Group,
+                Tag = Instance.NextTag,
+                ToastXml = xml,
+                AppId = AppId,
+                ActivatorId = typeof(NotificationActivator).GUID
+            };
 
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ {0} {1} {2} }}";
-            Instance.ShowToastAsync(xml).
-                ContinueWith(result => Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, id, result.Result)));
+            
+            Instance.ShowToastAsync(request).
+                ContinueWith(result => {
+                    (var toastResult, var toastRequest) = result.Result;
+                    Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, toastRequest.Tag, toastResult));
+                });
 
-            Utilities.SetData(ref data, id.ToString());
+            Utilities.SetData(ref data, request.Tag);
 
             return ReturnType.Return;
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static int ShowJsonToastAsync(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        public static int ShowToastJson(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             string json = Utilities.GetData(ref data);
 
-            if (String.IsNullOrEmpty(json))
+            if (String.IsNullOrWhiteSpace(json))
             {
+                return ReturnType.Continue;
+            }            
+
+            ToastRequest request;
+
+            try
+            {
+                request = new ToastRequest(json)
+                {
+                    AppId = AppId,
+                    ActivatorId = typeof(NotificationActivator).GUID
+                };
+
+                if (string.IsNullOrWhiteSpace(request.Group)) request.Group = Instance.Group;
+                if (string.IsNullOrWhiteSpace(request.Tag)) request.Tag = Instance.NextTag;     
+            }
+            catch (Exception e)
+            {
+                Instance.mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
                 return ReturnType.Continue;
             }
 
-            int id = ++Instance.ToastId;
-
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ {0} {1} {2} }}";
-            Instance.ShowToastAsyncByJson(json).
-                ContinueWith(result => Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, id, result.Result)));
-
-            Utilities.SetData(ref data, id.ToString());
+            Instance.ShowToastAsync(request).
+                ContinueWith(result => {
+                    (var toastResult, var toastRequest) = result.Result;
+                    Instance.mInstance.Exec(String.Format(Format, Instance.OnCompleteCallback, toastRequest.Tag, toastResult));
+                });
+            
+            Utilities.SetData(ref data, request.Tag);
 
             return ReturnType.Return;
         }

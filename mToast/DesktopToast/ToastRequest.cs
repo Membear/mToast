@@ -163,19 +163,31 @@ namespace DesktopToast
 			!string.IsNullOrWhiteSpace(ShortcutFileName) &&
 			!string.IsNullOrWhiteSpace(ShortcutTargetFilePath);
 
-		internal bool IsToastValid =>
-			!string.IsNullOrWhiteSpace(AppId) &&
-			((ToastBodyList?.Any()).GetValueOrDefault() ||
-			 !string.IsNullOrWhiteSpace(ToastXml));
+		//internal bool IsToastValid
+  //      {
+  //          get
+  //          {
+  //              var id = !string.IsNullOrWhiteSpace(AppId);
+  //              var body = (ToastBodyList?.Any()).GetValueOrDefault();
+  //              var xml = !string.IsNullOrWhiteSpace(ToastXml);
 
-		#endregion
+  //              return id && (body || xml);
+  //          }
+  //      }
 
-		#region Constructor
+        internal bool IsToastValid =>
+            !string.IsNullOrWhiteSpace(AppId) &&
+            ((ToastBodyList?.Any()).GetValueOrDefault() ||
+             !string.IsNullOrWhiteSpace(ToastXml));
 
-		/// <summary>
-		/// Default constructor
-		/// </summary>
-		public ToastRequest()
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public ToastRequest()
 		{ }
 
 		internal ToastRequest(string requestJson) : this()
