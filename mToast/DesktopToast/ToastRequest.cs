@@ -21,16 +21,16 @@ namespace DesktopToast
 		/// Toast title (optional)
 		/// </summary>
 		[DataMember]
-		public string ToastTitle { get; set; }
+		public string Title { get; set; }
 
 		/// <summary>
 		/// Toast body (required for toast)
 		/// </summary>
 		[DataMember]
-		public string ToastBody
+		public string Body
 		{
-			get { return ToastBodyList?[0]; }
-			set { ToastBodyList = new string[] { value }; }
+			get { return BodyList?[0]; }
+			set { BodyList = new string[] { value }; }
 		}
 
 		/// <summary>
@@ -38,12 +38,12 @@ namespace DesktopToast
 		/// </summary>
 		/// <remarks>If specified, toast body will be substituted by this list.</remarks>
 		[DataMember]
-		public IList<string> ToastBodyList
+		public IList<string> BodyList
 		{
-			get { return _toastBodyList; }
-			set { _toastBodyList = value?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList(); }
+			get { return _bodyList; }
+			set { _bodyList = value?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList(); }
 		}
-		private IList<string> _toastBodyList;
+		private IList<string> _bodyList;
 
 		/// <summary>
 		/// Logo image file path of toast (optional)
@@ -53,13 +53,13 @@ namespace DesktopToast
 		/// "file:///" + full file path
 		/// </remarks>
 		[DataMember]
-		public string ToastLogoFilePath { get; set; }
+		public string LogoFilePath { get; set; }
 
 		/// <summary>
 		/// Audio type of toast (optional)
 		/// </summary>
 		[DataMember]
-		public ToastAudio ToastAudio { get; set; }
+		public ToastAudio Audio { get; set; }
 
 		/// <summary>
 		/// XML representation of toast (optional)
@@ -67,7 +67,7 @@ namespace DesktopToast
 		/// <remarks>If specified, this XML will be used for a toast as it is. The other toast elements
 		/// will be ignored.</remarks>
 		[DataMember]
-		public string ToastXml { get; set; }
+		public string Xml { get; set; }
 
 		/// <summary>
 		/// Shortcut file name to be installed in Start menu (required for shortcut)
@@ -162,23 +162,11 @@ namespace DesktopToast
 			!string.IsNullOrWhiteSpace(AppId) &&
 			!string.IsNullOrWhiteSpace(ShortcutFileName) &&
 			!string.IsNullOrWhiteSpace(ShortcutTargetFilePath);
-
-		//internal bool IsToastValid
-  //      {
-  //          get
-  //          {
-  //              var id = !string.IsNullOrWhiteSpace(AppId);
-  //              var body = (ToastBodyList?.Any()).GetValueOrDefault();
-  //              var xml = !string.IsNullOrWhiteSpace(ToastXml);
-
-  //              return id && (body || xml);
-  //          }
-  //      }
-
+        
         internal bool IsToastValid =>
             !string.IsNullOrWhiteSpace(AppId) &&
-            ((ToastBodyList?.Any()).GetValueOrDefault() ||
-             !string.IsNullOrWhiteSpace(ToastXml));
+            ((BodyList?.Any()).GetValueOrDefault() ||
+             !string.IsNullOrWhiteSpace(Xml));
 
         #endregion
 

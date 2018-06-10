@@ -100,7 +100,7 @@ namespace MircSharp
         /// </exception>
         /// <param name="cmd">Command to send</param>
         /// <returns>Success</returns>
-        public bool Exec(string cmd)
+        public bool Exec(in string cmd)
         {
             IntPtr pData = IntPtr.Zero;
 

@@ -98,13 +98,13 @@ namespace DesktopToast
 		private static XmlDocument PrepareToastDocument(ToastRequest request)
 		{
 			XmlDocument document;
-			if (!string.IsNullOrWhiteSpace(request.ToastXml))
+			if (!string.IsNullOrWhiteSpace(request.Xml))
 			{
 				// Load a toast document from XML.
 				document = new XmlDocument();
 				try
 				{
-					document.LoadXml(request.ToastXml);
+					document.LoadXml(request.Xml);
 				}
 				catch
 				{
@@ -138,25 +138,25 @@ namespace DesktopToast
 			bindingElement.SetAttribute("template", "ToastGeneric");
 			visualElement.AppendChild(bindingElement);
 
-			if (!string.IsNullOrWhiteSpace(request.ToastTitle))
+			if (!string.IsNullOrWhiteSpace(request.Title))
 			{
-				var toastTitle = document.CreateElement("text");
-				toastTitle.AppendChild(document.CreateTextNode(request.ToastTitle));
-				bindingElement.AppendChild(toastTitle);
+				var title = document.CreateElement("text");
+				title.AppendChild(document.CreateTextNode(request.Title));
+				bindingElement.AppendChild(title);
 			}
 
-			foreach (string body in request.ToastBodyList)
+			foreach (string body in request.BodyList)
 			{
 				var toastBody = document.CreateElement("text");
 				toastBody.AppendChild(document.CreateTextNode(body));
 				bindingElement.AppendChild(toastBody);
 			}
 
-			if (!string.IsNullOrWhiteSpace(request.ToastLogoFilePath))
+			if (!string.IsNullOrWhiteSpace(request.LogoFilePath))
 			{
 				var appLogo = document.CreateElement("image");
 				appLogo.SetAttribute("placement", "appLogoOverride");
-				appLogo.SetAttribute("src", request.ToastLogoFilePath);
+				appLogo.SetAttribute("src", request.LogoFilePath);
 				bindingElement.AppendChild(appLogo);
 			}
 
@@ -177,7 +177,7 @@ namespace DesktopToast
 				case ToastTemplateType.ToastImageAndText02:
 				case ToastTemplateType.ToastImageAndText04:
 					var imageElements = document.GetElementsByTagName("image");
-					imageElements[0].Attributes.GetNamedItem("src").NodeValue = request.ToastLogoFilePath;
+					imageElements[0].Attributes.GetNamedItem("src").NodeValue = request.LogoFilePath;
 					break;
 			}
 
@@ -187,20 +187,20 @@ namespace DesktopToast
 			{
 				case ToastTemplateType.ToastImageAndText01:
 				case ToastTemplateType.ToastText01:
-					textElements[0].AppendChild(document.CreateTextNode(request.ToastBodyList[0]));
+					textElements[0].AppendChild(document.CreateTextNode(request.BodyList[0]));
 					break;
 
 				case ToastTemplateType.ToastImageAndText02:
 				case ToastTemplateType.ToastText02:
-					textElements[0].AppendChild(document.CreateTextNode(request.ToastTitle));
-					textElements[1].AppendChild(document.CreateTextNode(request.ToastBodyList[0]));
+					textElements[0].AppendChild(document.CreateTextNode(request.Title));
+					textElements[1].AppendChild(document.CreateTextNode(request.BodyList[0]));
 					break;
 
 				case ToastTemplateType.ToastImageAndText04:
 				case ToastTemplateType.ToastText04:
-					textElements[0].AppendChild(document.CreateTextNode(request.ToastTitle));
-					textElements[1].AppendChild(document.CreateTextNode(request.ToastBodyList[0]));
-					textElements[2].AppendChild(document.CreateTextNode(request.ToastBodyList[1]));
+					textElements[0].AppendChild(document.CreateTextNode(request.Title));
+					textElements[1].AppendChild(document.CreateTextNode(request.BodyList[0]));
+					textElements[2].AppendChild(document.CreateTextNode(request.BodyList[1]));
 					break;
 			}
 
@@ -209,12 +209,12 @@ namespace DesktopToast
 
 		private static ToastTemplateType GetTemplateType(ToastRequest request)
 		{
-			if (!string.IsNullOrWhiteSpace(request.ToastLogoFilePath))
+			if (!string.IsNullOrWhiteSpace(request.LogoFilePath))
 			{
-				if (string.IsNullOrWhiteSpace(request.ToastTitle))
+				if (string.IsNullOrWhiteSpace(request.Title))
 					return ToastTemplateType.ToastImageAndText01;
 
-				return (request.ToastBodyList.Count < 2)
+				return (request.BodyList.Count < 2)
 					? ToastTemplateType.ToastImageAndText02
 					: ToastTemplateType.ToastImageAndText04;
 
@@ -222,10 +222,10 @@ namespace DesktopToast
 			}
 			else
 			{
-				if (string.IsNullOrWhiteSpace(request.ToastTitle))
+				if (string.IsNullOrWhiteSpace(request.Title))
 					return ToastTemplateType.ToastText01;
 
-				return (request.ToastBodyList.Count < 2)
+				return (request.BodyList.Count < 2)
 					? ToastTemplateType.ToastText02
 					: ToastTemplateType.ToastText04;
 
@@ -235,7 +235,7 @@ namespace DesktopToast
 
 		private static XmlDocument AddAudio(XmlDocument document, ToastRequest request)
 		{
-			var option = CheckAudio(request.ToastAudio);
+			var option = CheckAudio(request.Audio);
 			if (option == AudioOption.Long)
 				document.DocumentElement.SetAttribute("duration", "long");
 
@@ -246,7 +246,7 @@ namespace DesktopToast
 			}
 			else
 			{
-				audioElement.SetAttribute("src", $"ms-winsoundevent:Notification.{request.ToastAudio.ToString().ToCamelWithSeparator('.')}");
+				audioElement.SetAttribute("src", $"ms-winsoundevent:Notification.{request.Audio.ToString().ToCamelWithSeparator('.')}");
 				audioElement.SetAttribute("loop", (option == AudioOption.Long) ? "true" : "false");
 			}
 			document.DocumentElement.AppendChild(audioElement);

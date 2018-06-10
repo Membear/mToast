@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Json;
@@ -157,7 +156,7 @@ namespace MircSharp.ToastNotifications
                 case RequestType.Xml:
                     request = new ToastRequest
                     {
-                        ToastXml = input,
+                        Xml = input,
                         AppId = AppId,
                         ActivatorId = typeof(NotificationActivator).GUID
                     };
