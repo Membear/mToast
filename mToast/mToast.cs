@@ -203,163 +203,172 @@ namespace MircSharp.ToastNotifications
         #endregion
 
         #region mIRC Exports
-            #region DLL Loading
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static void LoadDll(IntPtr loadinfo)
+        #region DLL Loading
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static void LoadDll(IntPtr loadinfo)
+        {
+            Instance.mInstance = new mIRC(loadinfo);
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int UnloadDll(int mTimeout)
+        {
+            if (mTimeout == UnloadTimeout.Timeout)
             {
-                Instance.mInstance = new mIRC(loadinfo);
+                return UnloadReturn.Keep;
             }
 
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int UnloadDll(int mTimeout)
-            {
-                if (mTimeout == UnloadTimeout.Timeout)
-                {
-                    return UnloadReturn.Keep;
-                }
+            Instance.mInstance.Dispose();
 
-                Instance.mInstance.Dispose();
+            return UnloadReturn.Allow;
+        }
+        #endregion
 
-                return UnloadReturn.Allow;
-            }
-            #endregion
+        #region Auxiliary
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int Initialize(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            Instance.CreateShortcut();
+            Instance.CopyIcon();
 
-            #region Auxiliary
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int Initialize(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-            {
-                Instance.CreateShortcut();
-                Instance.CopyIcon();
-
-                return ReturnType.Continue;
-            }
+            return ReturnType.Continue;
+        }
         
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-            {
-                Instance.OnActivatedCallback = Utilities.GetData(ref data);
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            Instance.OnActivatedCallback = Utilities.GetData(ref data);
 
-                return ReturnType.Continue;
+            return ReturnType.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            Instance.OnCompleteCallback = Utilities.GetData(ref data);
+
+            return ReturnType.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetNextTag(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            var tag = Utilities.GetData(ref data);
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                _ = Instance.NextTag;
+            }
+            else
+            {
+                Instance.NextTag = tag;
             }
 
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
-            {
-                Instance.OnCompleteCallback = Utilities.GetData(ref data);
+            return ReturnType.Continue;
+        }
 
-                return ReturnType.Continue;
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int SetNextGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            var group = Utilities.GetData(ref data);
+            if (string.IsNullOrWhiteSpace(group))
+            {
+                _ = Instance.NextGroup;
+            }
+            else
+            {
+                Instance.NextGroup = Utilities.GetData(ref data);
             }
 
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int SetNextTag(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+            return ReturnType.Continue;
+        }
+
+        private void ShowError(Exception e)
+        {
+#if DEBUG
+            if (Instance.mInstance.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
             {
-                var tag = Utilities.GetData(ref data);
-                if (string.IsNullOrWhiteSpace(tag))
-                {
-                    _ = Instance.NextTag;
-                }
-                else
-                {
-                    Instance.NextTag = tag;
-                }
-
-                return ReturnType.Continue;
+                Instance.mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
             }
+#else
+            _ = e;
+#endif
+        }
+        #endregion
 
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int SetNextGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        #region Toast Creation
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int ShowToastXml(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            try
             {
-                var group = Utilities.GetData(ref data);
-                if (string.IsNullOrWhiteSpace(group))
-                {
-                    _ = Instance.NextGroup;
-                }
-                else
-                {
-                    Instance.NextGroup = Utilities.GetData(ref data);
-                }
-
-                return ReturnType.Continue;
+                return ShowToast(RequestType.Xml, ref data);
             }
-            #endregion
-
-            #region Toast Creation
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int ShowToastXml(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+            catch (Exception e)
             {
-                try
-                {
-                    return ShowToast(RequestType.Xml, ref data);
-                }
-                catch (Exception e)
-                {
-                    Instance.mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
-                    return ReturnType.Continue;
-                }            
+                Instance.ShowError(e);
             }
-
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int ShowToastJson(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+            return ReturnType.Continue;
+        }
+        
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int ShowToastJson(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            try
             {
-                try
-                {
-                    return ShowToast(RequestType.Json, ref data);
-                }
-                catch (Exception e)
-                {
-                    Instance.mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
-                    return ReturnType.Continue;
-                }
+                return ShowToast(RequestType.Json, ref data);
             }
-            #endregion
-
-            #region Toast History
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int Clear(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+            catch (Exception e)
             {
-                try
-                {
-                    ToastNotificationManager.History.Clear(AppId);
-                }
-                catch (Exception e)
-                {
-                    Utilities.SetData(ref data,String.Format("mToast error: {0} {1}", e.Message, e.ToString()));
-                }
-
-                return ReturnType.Continue;
+                Instance.ShowError(e);
             }
+            return ReturnType.Continue;
+        }
+        #endregion
 
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int Remove(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        #region Toast History
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int Clear(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            try
             {
-                try
-                {
-                    ToastNotificationManager.History.Remove(Utilities.GetData(ref data), Instance.NextGroup, AppId);
-                }
-                catch (Exception e)
-                {
-                    Utilities.SetData(ref data, String.Format("mToast error: {0} {1}", e.Message, e.ToString()));
-                }
-
-                return ReturnType.Continue;
+                ToastNotificationManager.History.Clear(AppId);
             }
-
-            [DllExport(CallingConvention = CallingConvention.StdCall)]
-            public static int RemoveGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+            catch (Exception e)
             {
-                try
-                {
-                    ToastNotificationManager.History.RemoveGroup(Utilities.GetData(ref data), AppId);
-                }
-                catch (Exception e)
-                {
-                    Utilities.SetData(ref data, String.Format("mToast error: {0} {1}", e.Message, e.ToString()));
-                }
-
-                return ReturnType.Continue;
+                Instance.ShowError(e);
             }
+            return ReturnType.Continue;
+        }
 
-            #endregion
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int Remove(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            try
+            {
+                ToastNotificationManager.History.Remove(Utilities.GetData(ref data), Instance.NextGroup, AppId);
+            }
+            catch (Exception e)
+            {
+                Instance.ShowError(e);
+            }
+            return ReturnType.Continue;
+        }
+
+        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        public static int RemoveGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
+        {
+            try
+            {
+                ToastNotificationManager.History.RemoveGroup(Utilities.GetData(ref data), AppId);
+            }
+            catch (Exception e)
+            {
+                Instance.ShowError(e);
+            }
+            return ReturnType.Continue;
+        }
+
+        #endregion
         #endregion
     }
 }

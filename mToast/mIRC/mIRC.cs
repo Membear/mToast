@@ -36,7 +36,8 @@ namespace MircSharp
 
     public class mIRC : IDisposable
     {
-        const int MIRC_MAP_SIZE = (8192 * sizeof(char));
+        const int MIRC_LINE_LENGTH = 4150;
+        const int MIRC_MAP_SIZE = (MIRC_LINE_LENGTH * sizeof(char));
 
         readonly IntPtr hFileMap = IntPtr.Zero;
         readonly IntPtr pView = IntPtr.Zero;
@@ -103,7 +104,7 @@ namespace MircSharp
         {
             IntPtr pData = IntPtr.Zero;
 
-            pData = Marshal.StringToHGlobalAnsi(String.Format("{0}\0", cmd));
+            pData = Marshal.StringToHGlobalAnsi(String.Format("{0}\0", cmd.Truncate(MIRC_LINE_LENGTH - 1)));
             NativeMethods.MemCopy(pView, pData, (uint)(cmd.Length + 1));
 
             Marshal.FreeHGlobal(pData);
