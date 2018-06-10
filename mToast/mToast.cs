@@ -275,7 +275,7 @@ namespace MircSharp.ToastNotifications
 #if DEBUG
             if (Instance.mInstance.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
             {
-                Instance.mInstance.Exec(String.Format("/.timer 1 0 echo -sag mToast error: {0} {1}", e.Message, e.InnerException));
+                Instance.mInstance.Exec($"/.timer 1 0 echo -sag mToast error: {e.Message} {e.InnerException}");
             }
 #else
             _ = e;

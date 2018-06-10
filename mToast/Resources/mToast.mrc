@@ -4,7 +4,7 @@ alias mirc.png return $scriptdirmIRC.png
 
 ; Example toast
 alias mtoast.example {
-  var %xml = <toast launch="action=viewConversation&amp;conversationId=5"><visual><binding template="ToastGeneric"><text>Membear sent you a picture</text><text>Check this out, The Enchantments!</text><image src=" $+ $mirc.png $+ " /><image src=" $+ $mirc.png $+ " placement="appLogoOverride" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments="action=reply&amp;conversationId=5" /><action content="Like" arguments="action=like&amp;conversationId=5" /><action content="View" arguments="action=viewImage&amp;imageUrl=https://picsum.photos/364/202/image/883" /></actions></toast>
+  var %xml = <toast launch="action=viewConversation&amp;conversationId=5"><visual><binding template="ToastGeneric"><text>Membear sent you a picture</text><text>Check this out!</text><image src=" $+ $mirc.png $+ " /><image src=" $+ $mirc.png $+ " placement="appLogoOverride" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments="action=reply&amp;conversationId=5" /><action content="Like" arguments="action=like&amp;conversationId=5" /><action content="View" arguments="action=viewImage&amp;imageUrl=https://picsum.photos/364/202/image/883" /></actions></toast>
 
   noop $mToast.ShowToastXml(%xml,_tag,_group)
 }
@@ -47,7 +47,7 @@ alias mToast.ShowToast {
   var %text = $json.encode($$2)
   var %image = $json.encode($3)
 
-  var %request = {"ToastTitle":" $+ %title $+ ","ToastBody":" $+ %text $+ ","ToastLogoFilePath":" $+ %image $+ "}
+  var %request = {"Title":" $+ %title $+ ","Body":" $+ %text $+ ","LogoFilePath":" $+ %image $+ "}
 
   return $mToast.ShowToastJson(%request)
 }
@@ -79,7 +79,7 @@ alias mToast.ShowToastXml {
 
   var %tag = $dll($mToast_dll,ShowToastXml,%xml)
 
-  if ($mToast_debug) echo 6 -sag Toast created tag = %tag
+  if ($mToast_debug) echo 16 -sag Toast created tag = %tag
 
   return %tag
 }
@@ -94,13 +94,15 @@ alias mToast.ShowToastXml {
 ;;
 ;;    @Json - String - Required
 ;;        Available data members:
-;;            ToastTitle - String - Optional
-;;            ToastBody  - String - Required
-;;            ToastBodyList - List<String> - Optional
-;;            ToastLogoFilePath - String - Optional
-;;            ToastAudio - Number - Optional
+;;            Title - String - Optional
+;;            Body  - String - Required
+;;            BodyList - List<String> - Optional
+;;            LogoFilePath - String - Optional
+;;            Audio - Number - Optional
 ;;                Range: 0 (default) - 25 (silent)
 ;;                See: https://docs.microsoft.com/en-us/uwp/schemas/tiles/toastschema/element-audio
+;;            Xml - String - Optional
+;;                Other elements are ignored when using this property
 ;;            Tag - String - Optional
 ;;            Group - String - Optional
 ;;
@@ -109,7 +111,7 @@ alias mToast.ShowToastJson {
 
   var %tag = $dll($mToast_dll,ShowToastJson,%json)
 
-  if ($mToast_debug) echo 9 -sag Toast created tag = %tag
+  if ($mToast_debug) echo 7 -sag Toast created tag = %tag
 
   return %tag
 }
@@ -297,6 +299,8 @@ alias mToast.pm.callback {
 
 on *:signal:mToast.OnComplete:{
   var %result = $$1, %tag = $$2-
+
+  if ($mToast_debug) echo 3 -sag Signal mToast.OnComplete received result = %result : tag = %tag
 
   if ($hget(mToast)) && ($hget(mToast,%tag)) { 
     tokenize 32 $v1
