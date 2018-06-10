@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using Windows.UI.Notifications;
 
 using DesktopToast;
-using Windows.UI.Notifications;
 
 namespace MircSharp.ToastNotifications
 {
