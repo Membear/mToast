@@ -141,16 +141,6 @@ namespace MircSharp.ToastNotifications
                 data.Count == 0 ? "$null" : Utilities.Base64Encode(dataString)));
         }
         
-        private async Task<(ToastResult, ToastRequest)> ShowToastAsync(ToastRequest request)
-        {
-            (ToastResult res, ToastRequest req) tuple;
-
-            tuple.req = request;
-            tuple.res = await ToastManager.ShowAsync(request);
-
-            return tuple;
-        }
-
         private static int ShowToast(RequestType type, ref IntPtr data)
         {
             string input = Utilities.GetData(ref data);
@@ -187,13 +177,12 @@ namespace MircSharp.ToastNotifications
             if (string.IsNullOrWhiteSpace(request.Tag)) request.Tag = Instance.NextTag;
 
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ noop ${0}($unsafe({1}).undo,{2}) }}";
-            Instance.ShowToastAsync(request).
+            ToastManager.ShowAsync(request).
                 ContinueWith(result => {
-                    (var toastResult, var toastRequest) = result.Result;
                     Instance.mInstance.Exec(String.Format(Format,
                         Instance.OnCompleteCallback,
-                        Utilities.Base64Encode(toastRequest.Tag),
-                        toastResult));
+                        Utilities.Base64Encode(request.Tag),
+                        result.Result));
                 });
 
             Utilities.SetData(ref data, request.Tag);
