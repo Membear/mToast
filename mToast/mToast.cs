@@ -120,24 +120,24 @@ namespace MircSharp.ToastNotifications
         #region Notification Creation/Handling
         private void OnActivated(string arguments, Dictionary<string, string> data)
         {
-            string dataString;
+            string dataStringB64;
 
             using (var stream = new MemoryStream())
             {
                 var serializer = new DataContractJsonSerializer(typeof(Dictionary<string,string>), new DataContractJsonSerializerSettings()
-                {
+                {                    
                     UseSimpleDictionaryFormat = true
                 });
                 serializer.WriteObject(stream, data);
 
-                dataString = Encoding.ASCII.GetString(stream.ToArray());
+                dataStringB64 = Convert.ToBase64String(stream.ToArray());
             }
-
+            
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ noop ${0}($unsafe({1}).undo,$unsafe({2}).undo) }}";
             mInstance.Exec(string.Format(Format,
                 OnActivatedCallback,
-                string.IsNullOrEmpty(arguments) ? "$null" : Utilities.Base64Encode(arguments),
-                data.Count == 0 ? "$null" : Utilities.Base64Encode(dataString)));
+                string.IsNullOrWhiteSpace(arguments) ? "$null" : Utilities.Base64Encode(arguments),
+                data?.Count < 1 ? "$null" : dataStringB64));
         }
         
         private static int ShowToast(RequestType type, ref IntPtr data)
@@ -193,9 +193,9 @@ namespace MircSharp.ToastNotifications
         #region mIRC Exports
         #region DLL Loading
         [DllExport(CallingConvention = CallingConvention.StdCall)]
-        public static void LoadDll(IntPtr loadinfo)
+        public static void LoadDll([MarshalAs(UnmanagedType.Struct)] ref LOADINFO loadinfo)
         {
-            Instance.mInstance = new mIRC(loadinfo);
+            Instance.mInstance = new mIRC(ref loadinfo);
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
@@ -264,7 +264,7 @@ namespace MircSharp.ToastNotifications
             }
             else
             {
-                Instance.NextGroup = Utilities.GetData(ref data);
+                Instance.NextGroup = group;
             }
 
             return ReturnType.Continue;

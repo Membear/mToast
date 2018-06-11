@@ -8,8 +8,8 @@ namespace MircSharp
     {
         public readonly uint mVersion;
         public readonly IntPtr mHwnd;
-        public readonly bool mKeep;
-        public readonly bool mUnicode;
+        public bool mKeep;
+        public bool mUnicode;
         public readonly uint mBeta;
     }
 
@@ -34,6 +34,19 @@ namespace MircSharp
         public const int Exit = 2;
     }
 
+    static class cMethod
+    {
+        public const int EditBox = 1;
+        public const int PlainText = 2;
+        public const int Flood = 4;
+        public const int Unicode = 8;
+
+        public static readonly IntPtr pEditBox = new IntPtr(1);
+        public static readonly IntPtr pPlainText = new IntPtr(2);
+        public static readonly IntPtr pFlood = new IntPtr(4);
+        public static readonly IntPtr pUnicode = new IntPtr(8);
+    }
+
     public class mIRC : IDisposable
     {
         const int MIRC_LINE_LENGTH = 4150;
@@ -41,31 +54,29 @@ namespace MircSharp
 
         readonly IntPtr hFileMap = IntPtr.Zero;
         readonly IntPtr pView = IntPtr.Zero;
-        readonly IntPtr pLoadInfo;
-
-        readonly IntPtr cIndex;
+        readonly IntPtr cIndex = IntPtr.Zero;
 
         public LOADINFO LoadInfo { get; }
-
-        public mIRC(IntPtr loadinfo)
+        
+        public mIRC(ref LOADINFO loadinfo)
         {
-            pLoadInfo = loadinfo;
-            LoadInfo = (LOADINFO)Marshal.PtrToStructure(loadinfo, typeof(LOADINFO));
+            loadinfo.mUnicode = true;
+            LoadInfo = loadinfo;
 
             InitMapFile(ref cIndex, ref hFileMap, ref pView);
         }
-
+        
         void InitMapFile(ref IntPtr cIndex, ref IntPtr hFileMap, ref IntPtr pView)
         {
             int error = 0;
             var r = new Random();
             
-            cIndex = (IntPtr)r.Next(1, int.MaxValue);
+            int index = r.Next(1, int.MaxValue);
 
             do
             {
-                cIndex = (IntPtr)((int)cIndex % (int.MaxValue - 1) + 1);
-                string name = "mIRC" + cIndex;
+                index = index % (int.MaxValue - 1) + 1;
+                string name = $"mIRC{index}";
 
                 hFileMap = NativeMethods.CreateFileMapping(NativeMethods.INVALID_HANDLE_VALUE, IntPtr.Zero, FileMapProtection.PageReadWrite, 0, MIRC_MAP_SIZE, name);
 
@@ -89,6 +100,10 @@ namespace MircSharp
             {
                 NativeMethods.CloseHandle(hFileMap);
             }
+            else
+            {
+                cIndex = (IntPtr)index;
+            }
         }
 
         /// <summary>
@@ -100,33 +115,28 @@ namespace MircSharp
         /// </exception>
         /// <param name="cmd">Command to send</param>
         /// <returns>Success</returns>
-        public bool Exec(in string cmd)
+        public bool Exec(in string input)
         {
-            IntPtr pData = IntPtr.Zero;
+            string trunc = input.Truncate(MIRC_LINE_LENGTH);
 
-            pData = Marshal.StringToHGlobalAnsi(String.Format("{0}\0", cmd.Truncate(MIRC_LINE_LENGTH - 1)));
-            NativeMethods.MemCopy(pView, pData, (uint)(cmd.Length + 1));
+            IntPtr pData = Marshal.StringToHGlobalUni(trunc);
+            NativeMethods.MemCopy(pView, pData, (uint)(trunc.Length + 1) * sizeof(char));
 
             Marshal.FreeHGlobal(pData);
 
-            return NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MCOMMAND, IntPtr.Zero, cIndex) != IntPtr.Zero;
+            return NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MCOMMAND, cMethod.pUnicode, cIndex) != IntPtr.Zero;
         }
 
-        public bool Eval(out string output, string input)
-        {
-            IntPtr pData = IntPtr.Zero;
+        public bool Eval(out string output, in string input)
+        {            
+            string trunc =  input.Truncate(MIRC_LINE_LENGTH);
 
-            input = input + '\0';
-            pData = Marshal.StringToHGlobalAnsi(input);
-            NativeMethods.MemCopy(pView, pData, (uint)input.Length);
-
-            var ret = NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MEVALUATE, IntPtr.Zero, cIndex);
-
-            bool success = ret != IntPtr.Zero;
-
-            if (success)
+            IntPtr pData = Marshal.StringToHGlobalUni(trunc);
+            NativeMethods.MemCopy(pView, pData, (uint)(trunc.Length + 1) * sizeof(char));
+            
+            if (IntPtr.Zero != NativeMethods.SendMessage(LoadInfo.mHwnd, NativeMethods.WM_MEVALUATE, cMethod.pUnicode, cIndex))
             {
-                output = Marshal.PtrToStringAnsi(pView);
+                output = Marshal.PtrToStringUni(pView);
                 return true;
             }
             else
