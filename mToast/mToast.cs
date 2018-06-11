@@ -5,7 +5,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Json;
-using System.Text;
 using Windows.UI.Notifications;
 
 using DesktopToast;
