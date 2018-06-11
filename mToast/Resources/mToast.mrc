@@ -1,4 +1,4 @@
-alias -l mToast_dll return $qt($scriptdirmToast.dll)
+alias mToast_dll return $qt($scriptdirmToast.dll)
 alias mToast_debug return $false
 alias mirc.png return $scriptdirmIRC.png
 
@@ -22,7 +22,7 @@ on *:start:{
 ;;    Registers Com server and installs shortcut
 ;;    
 alias mToast.Initialize {
-  dll $mToast_dll Initialize
+  return $dll($mToast_dll,Initialize,some text here)
 }
 
 
@@ -234,8 +234,8 @@ alias -l json.encode {
   return $replacex($1-,",\",\,\\)
 }
 
-alias -l json.unescape {
-  return $regsubex($1-,/\\(?:u(....)|(.))/g,$escape.map(\t))
+alias json.unescape {
+  return $regsubex($1-,/(*UTF)\\(?:u(....)|(.))/g,$escape.map(\t))
 }
 
 alias -l escape.map {
@@ -253,7 +253,7 @@ alias -l escape.map {
 
 ; Toasts for private messages
 on *:text:*:?:{
-  if ($appactive) return
+  ;if ($appactive) return
   if ($msgstamp) && ($calc($ctime - $msgstamp) > 10) { return }
 
   var %logo = $iif($user.icon($nick),$v1,$mirc.png)
