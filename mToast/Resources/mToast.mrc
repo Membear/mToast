@@ -1,4 +1,5 @@
 alias mToast_dll return $qt($scriptdirmToast.dll)
+;alias mToast_dll return $qt(C:\Users\Daniel\OneDrive\Development\mIRCSharp\mToast\bin\Debug\mToast.dll)
 alias mToast_debug return $false
 alias mirc.png return $scriptdirmIRC.png
 
@@ -103,8 +104,9 @@ alias mToast.ShowToastXml {
 ;;                See: https://docs.microsoft.com/en-us/uwp/schemas/tiles/toastschema/element-audio
 ;;            Xml - String - Optional
 ;;                Other elements are ignored when using this property
-;;            Tag - String - Optional
 ;;            Group - String - Optional
+;;            SuppressPopup - Bool - Optional
+;;            Tag - String - Optional
 ;;
 alias mToast.ShowToastJson {
   var %json = $$1
@@ -230,18 +232,27 @@ alias mToast.OnComplete {
 ;; Utility functions
 ;;
 
+alias xml.encode {
+  var %ret = $regsubex($strip($1-),/[\x00-\x19]/ugi,)
+  var %ret = $replacex(%ret,",&quot;,<,&gt;,&,&amp;)
+  return %ret
+}
+
 alias -l json.encode {
-  return $replacex($1-,",\",\,\\)
+  var %ret = $regsubex($strip($1-),/[\x00-\x19]/sugi,)
+  return $replacex(%ret,",\",\,\\)
 }
 
 alias json.unescape {
-  return $regsubex($1-,/(*UTF)\\(?:u(....)|(.))/g,$escape.map(\t))
+  ;return $utfdecode($regsubex($1-,/\\u(d[89a-f][0-9a-f]{2})\\u(d[0-9a-f]{3})|(?:\\(?:u(....)|(.)))/Figu,$escape.map(\1 \3,\2,\4)))
+  return $regsubex($1-,/\\(?:u(....)|(.))/Fig,$escape.map(\1,\2))
 }
 
 alias -l escape.map {
-  if ($1 isalpha) return $chr(160)
-  if ($1 !isalnum) return $1
-  if ($base($1,16,10) > 32) return $chr($v1)
+  if ($1) return $chr($base($1,16,10))
+  ; $+ $chr($base($2,16,10))
+  ;if ($3 !isalnum) return $3
+  if ($2 !isalnum) return $2
   return $chr(160)
 }
 
@@ -261,9 +272,11 @@ on *:text:*:?:{
   var %launch.args = callback=mToast.pm.callback&amp;action=launch&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
   var %reply.args = callback=mToast.pm.callback&amp;action=reply&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
   var %view.args = callback=mToast.pm.callback&amp;action=view&amp;cid= $+ $cid $+ &amp;nick= $+ $nick
+  var %dismiss.args = callback=mToast.pm.callback&amp;action=dismiss&amp;nick= $+ $nick
   var %header.args = %view.args
 
-  var %xml = <toast launch=" $+ %launch.args $+ "><header id=" $+ $nick $+ " title=" $+ $nick $+ " arguments=" $+ %header.args $+ "/><visual><binding template="ToastGeneric"><text> $+ $1- $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
+  ;var %xml = <toast launch=" $+ %launch.args $+ "><header id=" $+ $nick $+ " title=" $+ $nick $+ " arguments=" $+ %header.args $+ "/><visual><binding template="ToastGeneric"><text> $+ $xml.encode($1-) $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
+  var %xml = <toast launch=" $+ %launch.args $+ "><visual><binding template="ToastGeneric"><text> $+ $nick $+ </text><text> $+ $xml.encode($1-) $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
 
   var %tag = $mToast.ShowToastXml(%xml,,$nick)
 
@@ -284,6 +297,8 @@ alias mToast.pm.callback {
 
       scid %cid
       msg %nick %reply
+      flash -c
+      window -g0 %nick
     }
     elseif (%action == view) {
       scid %cid
@@ -292,7 +307,7 @@ alias mToast.pm.callback {
     }
     elseif (%action == launch) {
       flash -c
-      mToast.Clear
+      mToast.RemoveGroup %nick
     }
   }
 }
@@ -314,8 +329,12 @@ on *:signal:mToast.OnComplete:{
   }
 }
 
+on *:active:?:{
+  mToast.RemoveGroup $active
+}
+
 ; User icons
-alias -l user.icon {
+alias user.icon {
   var %file = $+($scriptdir,user.icons\,$nick,.jpg)
 
   if ($isfile(%file)) return %file

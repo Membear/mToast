@@ -154,11 +154,14 @@ namespace DesktopToast
         [DataMember]
         public string Tag { get; set; }
 
-		#endregion
+        [DataMember]
+        public bool SuppressPopup { get; set; }
 
-		#region Internal Property
+        #endregion
 
-		internal bool IsShortcutValid =>
+        #region Internal Property
+
+        internal bool IsShortcutValid =>
 			!string.IsNullOrWhiteSpace(AppId) &&
 			!string.IsNullOrWhiteSpace(ShortcutFileName) &&
 			!string.IsNullOrWhiteSpace(ShortcutTargetFilePath);

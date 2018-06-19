@@ -38,7 +38,8 @@ namespace DesktopToast
 			if (document == null)
 				return ToastResult.Invalid;
 
-			return await ShowBaseAsync(document, request.AppId, request.Group, request.Tag);
+
+            return await ShowBaseAsync(document, request);
 		}
 
 		/// <summary>
@@ -78,7 +79,7 @@ namespace DesktopToast
 			if (!OsVersion.IsEightOrNewer)
 				return ToastResult.Unavailable;
 
-			return await ShowBaseAsync(document, appId);
+			return await ShowBaseAsync(new ToastNotification(document), appId);
 		}
 
 		#region Document
@@ -322,22 +323,29 @@ namespace DesktopToast
 			}
 		}
 
-		#endregion
+        #endregion
 
-		#region Toast
+        #region Toast
 
-		/// <summary>
-		/// Shows a toast.
-		/// </summary>
-		/// <param name="document">Toast document</param>
-		/// <param name="appId">AppUserModelID</param>
-		/// <returns>Result of showing a toast</returns>
-		private static async Task<ToastResult> ShowBaseAsync(XmlDocument document, string appId, string group = default(string), string tag = default(string))
-		{
-            // Create a toast and prepare to handle toast events.
+        private static async Task<ToastResult> ShowBaseAsync(XmlDocument document, ToastRequest request)
+        {
             var toast = new ToastNotification(document);
-            if (group != null) { toast.Group = group; }
-            if (tag != null) { toast.Tag = tag; }
+            if (request.Group != null) { toast.Group = request.Group; }
+            if (request.Tag != null) { toast.Tag = request.Tag; }
+            
+            toast.SuppressPopup = request.SuppressPopup;
+
+            return await ShowBaseAsync(toast, request.AppId);
+        }
+
+        /// <summary>
+        /// Shows a toast.
+        /// </summary>
+        /// <param name="document">Toast document</param>
+        /// <param name="appId">AppUserModelID</param>
+        /// <returns>Result of showing a toast</returns>
+        private static async Task<ToastResult> ShowBaseAsync(ToastNotification toast, string appId) //XmlDocument document, string appId, string group = default(string), string tag = default(string))
+		{
 			var tcs = new TaskCompletionSource<ToastResult>();
 
 			TypedEventHandler<ToastNotification, object> activated = (sender, e) =>
