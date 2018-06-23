@@ -26,7 +26,7 @@ namespace MircSharp.ToastNotifications
         #region Members
         public static mToast Instance { get; } = new mToast();
 
-        mIRC mIRC { get; } = new mIRC();
+        private mIRC mIRC { get; } = new mIRC();
         #endregion
 
         #region Properties
