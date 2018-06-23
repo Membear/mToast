@@ -117,7 +117,7 @@ namespace MircSharp
         /// <returns>Success</returns>
         public bool Exec(in string input)
         {
-            string trunc = input.Truncate(MIRC_LINE_LENGTH);
+            string trunc = input.Truncate(MIRC_LINE_LENGTH);            
 
             IntPtr pData = Marshal.StringToHGlobalUni(trunc);
             NativeMethods.MemCopy(pView, pData, (uint)(trunc.Length + 1) * sizeof(char));
@@ -148,40 +148,27 @@ namespace MircSharp
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
                 if (pView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(pView);
                 if (hFileMap != IntPtr.Zero) NativeMethods.CloseHandle(hFileMap);
 
                 disposedValue = true;
             }
         }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        
         ~mIRC()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(false);
         }
-
-        // This code added to correctly implement the disposable pattern.
+        
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
             GC.SuppressFinalize(this);
         }
         #endregion

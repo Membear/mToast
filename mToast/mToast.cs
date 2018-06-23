@@ -26,7 +26,7 @@ namespace MircSharp.ToastNotifications
         #region Members
         public static mToast Instance { get; } = new mToast();
 
-        mIRC mInstance { get; set; }
+        mIRC mIRC { get; set; }
         #endregion
 
         #region Properties
@@ -119,7 +119,7 @@ namespace MircSharp.ToastNotifications
         #region Notification Creation/Handling
         private void OnActivated(string arguments, Dictionary<string, string> data)
         {
-            string dataStringB64;
+            string dataString64;
 
             using (var stream = new MemoryStream())
             {
@@ -129,14 +129,14 @@ namespace MircSharp.ToastNotifications
                 });
                 serializer.WriteObject(stream, data);
 
-                dataStringB64 = Convert.ToBase64String(stream.ToArray());
+                dataString64 = Convert.ToBase64String(stream.ToArray());
             }
             
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ noop ${0}($unsafe({1}).undo,$unsafe({2}).undo) }}";
-            mInstance.Exec(string.Format(Format,
+            mIRC.Exec(string.Format(Format,
                 OnActivatedCallback,
                 string.IsNullOrWhiteSpace(arguments) ? "$null" : Utilities.Base64Encode(arguments),
-                data?.Count < 1 ? "$null" : dataStringB64));
+                data?.Count < 1 ? "$null" : dataString64));
         }
         
         private static int ShowToast(RequestType type, ref IntPtr data)
@@ -177,7 +177,7 @@ namespace MircSharp.ToastNotifications
             const string Format = "/.timer 1 0 if ($isalias({0})) {{ noop ${0}($unsafe({1}).undo,{2}) }}";
             ToastManager.ShowAsync(request).
                 ContinueWith(result => {
-                    Instance.mInstance.Exec(String.Format(Format,
+                    Instance.mIRC.Exec(String.Format(Format,
                         Instance.OnCompleteCallback,
                         Utilities.Base64Encode(request.Tag),
                         result.Result));
@@ -194,7 +194,7 @@ namespace MircSharp.ToastNotifications
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static void LoadDll([MarshalAs(UnmanagedType.Struct)] ref LOADINFO loadinfo)
         {
-            Instance.mInstance = new mIRC(ref loadinfo);
+            Instance.mIRC = new mIRC(ref loadinfo);
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
@@ -205,7 +205,7 @@ namespace MircSharp.ToastNotifications
                 return UnloadReturn.Keep;
             }
 
-            Instance.mInstance.Dispose();
+            Instance.mIRC.Dispose();
 
             return UnloadReturn.Allow;
         }
