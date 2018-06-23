@@ -11,7 +11,7 @@ using DesktopToast;
 
 namespace MircSharp.ToastNotifications
 {
-    class mToast
+    class mToast : IDisposable
     {
         #region Constants
         const string AppId = "mIRC";
@@ -26,7 +26,7 @@ namespace MircSharp.ToastNotifications
         #region Members
         public static mToast Instance { get; } = new mToast();
 
-        mIRC mIRC { get; set; }
+        mIRC mIRC { get; } = new mIRC();
         #endregion
 
         #region Properties
@@ -194,20 +194,18 @@ namespace MircSharp.ToastNotifications
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static void LoadDll([MarshalAs(UnmanagedType.Struct)] ref LOADINFO loadinfo)
         {
-            Instance.mIRC = new mIRC(ref loadinfo);
+            Instance.mIRC.Load(ref loadinfo);
         }
 
         [DllExport(CallingConvention = CallingConvention.StdCall)]
         public static int UnloadDll(int mTimeout)
         {
-            if (mTimeout == UnloadTimeout.Timeout)
+            if (mTimeout == UnloadTimeout.Exit)
             {
-                return UnloadReturn.Keep;
+                Instance.Dispose();                
             }
 
-            Instance.mIRC.Dispose();
-
-            return UnloadReturn.Allow;
+            return UnloadReturn.Keep;
         }
         #endregion
 
@@ -272,9 +270,9 @@ namespace MircSharp.ToastNotifications
         private void ShowError(Exception e)
         {
 #if DEBUG
-            if (Instance.mInstance.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
+            if (Instance.mIRC.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
             {
-                Instance.mInstance.Exec($"/.timer 1 0 echo -sag mToast error: {e.Message} {e.InnerException}");
+                Instance.mIRC.Exec($"/.timer 1 0 echo -sag mToast error: {e.Message} {e.InnerException}");
             }
 #else
             _ = e;
@@ -356,6 +354,30 @@ namespace MircSharp.ToastNotifications
         }
 
         #endregion
+        #endregion
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    NotificationActivatorBase.UnregisterComType();
+
+                    mIRC.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
         #endregion
     }
 }

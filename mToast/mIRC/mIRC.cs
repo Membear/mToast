@@ -56,14 +56,23 @@ namespace MircSharp
         readonly IntPtr pView = IntPtr.Zero;
         readonly IntPtr cIndex = IntPtr.Zero;
 
-        public LOADINFO LoadInfo { get; }
+        public LOADINFO LoadInfo { get; private set; }
         
         public mIRC(ref LOADINFO loadinfo)
+            :base()
+        {
+            Load(ref loadinfo);
+        }
+
+        public mIRC()
+        {
+            InitMapFile(ref cIndex, ref hFileMap, ref pView);
+        }
+
+        public void Load(ref LOADINFO loadinfo)
         {
             loadinfo.mUnicode = true;
             LoadInfo = loadinfo;
-
-            InitMapFile(ref cIndex, ref hFileMap, ref pView);
         }
         
         void InitMapFile(ref IntPtr cIndex, ref IntPtr hFileMap, ref IntPtr pView)
@@ -117,7 +126,7 @@ namespace MircSharp
         /// <returns>Success</returns>
         public bool Exec(in string input)
         {
-            string trunc = input.Truncate(MIRC_LINE_LENGTH);            
+            string trunc = input.Truncate(MIRC_LINE_LENGTH);
 
             IntPtr pData = Marshal.StringToHGlobalUni(trunc);
             NativeMethods.MemCopy(pView, pData, (uint)(trunc.Length + 1) * sizeof(char));
@@ -128,7 +137,7 @@ namespace MircSharp
         }
 
         public bool Eval(out string output, in string input)
-        {            
+        {
             string trunc =  input.Truncate(MIRC_LINE_LENGTH);
 
             IntPtr pData = Marshal.StringToHGlobalUni(trunc);
@@ -141,10 +150,9 @@ namespace MircSharp
             }
             else
             {
-                output = "";
+                output = null;
+                return false;
             }
-
-            return false;
         }
 
         #region IDisposable Support
