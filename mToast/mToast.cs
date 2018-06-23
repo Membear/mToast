@@ -359,6 +359,7 @@ namespace MircSharp.ToastNotifications
         #region IDisposable Support
         private bool disposedValue = false;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "<mIRC>k__BackingField")]
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
