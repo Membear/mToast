@@ -1,5 +1,4 @@
 alias mToast_dll return $qt($scriptdirmToast.dll)
-;alias mToast_dll return $qt(C:\Users\Daniel\OneDrive\Development\mIRCSharp\mToast\bin\Debug\mToast.dll)
 alias mToast_debug return $false
 alias mirc.png return $scriptdirmIRC.png
 
@@ -244,14 +243,12 @@ alias -l json.encode {
 }
 
 alias json.unescape {
-  ;return $utfdecode($regsubex($1-,/\\u(d[89a-f][0-9a-f]{2})\\u(d[0-9a-f]{3})|(?:\\(?:u(....)|(.)))/Figu,$escape.map(\1 \3,\2,\4)))
-  return $regsubex($1-,/\\(?:u(....)|(.))/Fig,$escape.map(\1,\2))
+  return $utfdecode($regsubex($1-,/\\u(d[89a-f][0-9a-f]{2})\\u(d[0-9a-f]{3})|(?:\\(?:u(....)|(.)))/Figu,$escape.map(\1 \3,\2,\4)))
 }
 
 alias -l escape.map {
-  if ($1) return $chr($base($1,16,10))
-  ; $+ $chr($base($2,16,10))
-  ;if ($3 !isalnum) return $3
+  if ($1) return $chr($base($1,16,10)) $+ $chr($base($2,16,10))
+  if ($3 !isalnum) return $3
   if ($2 !isalnum) return $2
   return $chr(160)
 }
@@ -264,7 +261,7 @@ alias -l escape.map {
 
 ; Toasts for private messages
 on *:text:*:?:{
-  ;if ($appactive) return
+  if ($appactive) return
   if ($msgstamp) && ($calc($ctime - $msgstamp) > 10) { return }
 
   var %logo = $iif($user.icon($nick),$v1,$mirc.png)
@@ -275,7 +272,6 @@ on *:text:*:?:{
   var %dismiss.args = callback=mToast.pm.callback&amp;action=dismiss&amp;nick= $+ $nick
   var %header.args = %view.args
 
-  ;var %xml = <toast launch=" $+ %launch.args $+ "><header id=" $+ $nick $+ " title=" $+ $nick $+ " arguments=" $+ %header.args $+ "/><visual><binding template="ToastGeneric"><text> $+ $xml.encode($1-) $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
   var %xml = <toast launch=" $+ %launch.args $+ "><visual><binding template="ToastGeneric"><text> $+ $nick $+ </text><text> $+ $xml.encode($1-) $+ </text><image src=" $+ %logo $+ " placement="appLogoOverride" hint-crop="circle" /></binding></visual><actions><input id="tbReply" type="text" placeHolderContent="Type a response" /><action content="Reply" arguments=" $+ %reply.args $+ " /><action content="View" arguments=" $+ %view.args $+ " /></actions></toast>
 
   var %tag = $mToast.ShowToastXml(%xml,,$nick)

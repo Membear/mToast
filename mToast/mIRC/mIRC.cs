@@ -139,7 +139,7 @@ namespace MircSharp
         public bool Eval(out string output, in string input)
         {
             string trunc =  input.Truncate(MIRC_LINE_LENGTH);
-
+            
             IntPtr pData = Marshal.StringToHGlobalUni(trunc);
             NativeMethods.MemCopy(pView, pData, (uint)(trunc.Length + 1) * sizeof(char));
             
