@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace MircSharp
 {
-    public static class Extensions
+    internal static class Extensions
     {
         public static string Truncate(this string value, int maxLength)
         {
@@ -16,24 +16,42 @@ namespace MircSharp
         }
     }
 
+    /// <summary>
+    /// Utility functions for mIRC
+    /// </summary>
     public class Utilities
     {
+        /// <summary>
+        /// Retrieves string from mIRC data pointer
+        /// </summary>
+        /// <param name="data">mIRC data pointer</param>
+        /// <returns>String sent from mIRC</returns>
         public static string GetData(ref IntPtr data)
         {
             return Marshal.PtrToStringUni(data);
         }
 
-        public static void SetData(ref IntPtr data, string output)
+        /// <summary>
+        /// Passes string to mIRC through data pointer
+        /// </summary>
+        /// <param name="data">mIRC data pointer</param>
+        /// <param name="input">string to pass</param>
+        public static void SetData(ref IntPtr data, in string input)
         {
             IntPtr pData = IntPtr.Zero;
 
-            pData = Marshal.StringToHGlobalUni(output);
-            NativeMethods.MemCopy(data, pData, (uint)(output.Length + 1) * sizeof(char));
+            pData = Marshal.StringToHGlobalUni(input);
+            NativeMethods.MemCopy(data, pData, (uint)(input.Length + 1) * sizeof(char));
 
             Marshal.FreeHGlobal(pData);
         }
 
-        public static string Base64Encode(string plainText)
+        /// <summary>
+        /// Base64 encodes text for use with mIRC's $unsafe() or $decode()
+        /// </summary>
+        /// <param name="plainText">Plain text</param>
+        /// <returns>Base64 encoded text</returns>
+        public static string Base64Encode(in string plainText)
         {
             var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);

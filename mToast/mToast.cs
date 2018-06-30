@@ -103,17 +103,7 @@ namespace MircSharp.ToastNotifications
                 WaitingDuration = TimeSpan.Zero,
             };
             _ = ToastManager.CheckInstallShortcut(req);
-        }
-
-        private void CopyIcon()
-        {
-            var imagePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "mIRC.png");
-
-            if (!File.Exists(imagePath))
-            {
-                File.WriteAllBytes(imagePath, Properties.Resources.mirclogo);
-            }
-        }
+        }        
         #endregion
 
         #region Notification Creation/Handling
@@ -214,7 +204,6 @@ namespace MircSharp.ToastNotifications
         public static int Initialize(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             Instance.CreateShortcut();
-            Instance.CopyIcon();
 
             return ReturnType.Continue;
         }

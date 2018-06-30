@@ -341,7 +341,7 @@ namespace DesktopToast
         /// <summary>
         /// Shows a toast.
         /// </summary>
-        /// <param name="document">Toast document</param>
+        /// <param name="toast"><see cref="ToastNotification"/> object</param>
         /// <param name="appId">AppUserModelID</param>
         /// <returns>Result of showing a toast</returns>
         private static async Task<ToastResult> ShowBaseAsync(ToastNotification toast, string appId) //XmlDocument document, string appId, string group = default(string), string tag = default(string))

@@ -148,12 +148,21 @@ namespace DesktopToast
 		[DataMember]
 		public TimeSpan? WaitingDuration { get; set; }
 
+        /// <summary>
+        /// Group property for ToastNotification
+        /// </summary>
         [DataMember]
         public string Group { get; set; }
 
+        /// <summary>
+        /// Tag property for ToastNotification
+        /// </summary>
         [DataMember]
         public string Tag { get; set; }
 
+        /// <summary>
+        /// SuppressPopup for ToastNotification
+        /// </summary>
         [DataMember]
         public bool SuppressPopup { get; set; }
 
