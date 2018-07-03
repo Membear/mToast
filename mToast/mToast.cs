@@ -81,7 +81,7 @@ namespace MircSharp.ToastNotifications
         string OnCompleteCallback { get; set; } = "mToast.OnComplete";
         #endregion
 
-        #region Constructors / Initialization
+        #region Constructors
         static mToast()
         {
         }
@@ -91,7 +91,9 @@ namespace MircSharp.ToastNotifications
             NotificationActivatorBase.RegisterComType(typeof(NotificationActivator), OnActivated);
             NotificationHelper.RegisterComServer(typeof(NotificationActivator), Assembly.GetExecutingAssembly().Location);
         }
+        #endregion
 
+        #region Auxiliary
         private void CreateShortcut()
         {
             var req = new ToastRequest()
@@ -103,10 +105,22 @@ namespace MircSharp.ToastNotifications
                 WaitingDuration = TimeSpan.Zero,
             };
             _ = ToastManager.CheckInstallShortcut(req);
-        }        
+        }
+
+        private void ShowError(Exception e)
+        {
+#if DEBUG
+            if (Instance.mIRC.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
+            {
+                Instance.mIRC.Exec($"/.timer 1 0 echo -sag mToast error: {e.Message} {e.InnerException}");
+            }
+#else
+            _ = e;
+#endif
+        }
         #endregion
 
-        #region Notification Creation/Handling
+        #region Toast Notifications
         private void OnActivated(string arguments, Dictionary<string, string> data)
         {
             string dataString64;
@@ -254,18 +268,6 @@ namespace MircSharp.ToastNotifications
             }
 
             return ReturnType.Continue;
-        }
-
-        private void ShowError(Exception e)
-        {
-#if DEBUG
-            if (Instance.mIRC.Eval(out string debug, "$mToast_debug") && (debug == "$true"))
-            {
-                Instance.mIRC.Exec($"/.timer 1 0 echo -sag mToast error: {e.Message} {e.InnerException}");
-            }
-#else
-            _ = e;
-#endif
         }
         #endregion
 
