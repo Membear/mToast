@@ -195,13 +195,13 @@ namespace MircSharp.ToastNotifications
 
         #region mIRC Exports
         #region DLL Loading
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static void LoadDll([MarshalAs(UnmanagedType.Struct)] ref LOADINFO loadinfo)
         {
             Instance.mIRC.Load(ref loadinfo);
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int UnloadDll(int mTimeout)
         {
             if (mTimeout == UnloadTimeout.Exit)
@@ -214,7 +214,7 @@ namespace MircSharp.ToastNotifications
         #endregion
 
         #region Auxiliary
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int Initialize(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             Instance.CreateShortcut();
@@ -222,7 +222,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
         
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int SetOnActivatedCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             Instance.OnActivatedCallback = Utilities.GetData(ref data);
@@ -230,7 +230,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int SetOnCompleteCallback(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             Instance.OnCompleteCallback = Utilities.GetData(ref data);
@@ -238,7 +238,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int SetNextTag(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             var tag = Utilities.GetData(ref data);
@@ -254,7 +254,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int SetNextGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             var group = Utilities.GetData(ref data);
@@ -272,7 +272,7 @@ namespace MircSharp.ToastNotifications
         #endregion
 
         #region Toast Creation
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int ShowToastXml(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             try
@@ -286,7 +286,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
         
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int ShowToastJson(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             try
@@ -302,7 +302,7 @@ namespace MircSharp.ToastNotifications
         #endregion
 
         #region Toast History
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int Clear(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             try
@@ -316,7 +316,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int Remove(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             try
@@ -330,7 +330,7 @@ namespace MircSharp.ToastNotifications
             return ReturnType.Continue;
         }
 
-        [DllExport(CallingConvention = CallingConvention.StdCall)]
+        [DllExport(CallingConvention.StdCall)]
         public static int RemoveGroup(IntPtr mWnd, IntPtr aWnd, IntPtr data, IntPtr parms, bool show, bool nopause)
         {
             try
