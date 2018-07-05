@@ -8,3 +8,7 @@ See: https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notific
 ## Requirements and Dependencies
 * mIRC v7.44
 * Windows 10
+
+## References
+* [3F/DllExport](https://github.com/3F/DllExport)
+* [emoacht/DesktopToast](https://github.com/emoacht/DesktopToast)
