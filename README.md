@@ -7,7 +7,7 @@ Windows toast notifications for mIRC
 * Supports callback by alias and signal
 * Includes module for PM notifications
 
-![Example](https://i.imgur.com/W2F0mJz.png)
+![Example](https://i.imgur.com/ZxR4GOi.png)
 
 ## Notes
 * This DLL is written in C#, mIRC compatibility made possible with DllExport package.
