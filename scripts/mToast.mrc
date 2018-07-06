@@ -286,7 +286,12 @@ alias mToast.pm.callback {
       var %reply = $json.unescape($regml(1))
 
       scid %cid
-      msg %nick %reply
+      if ($chr(13) !isin %reply) { msg %nick %reply }
+      else {
+        var %t = $numtok(%reply,13)
+        var %i = 1
+        while (%i <= %t) { msg %nick $gettok(%reply,%i,13) | inc %i }
+      }
       flash -c
       window -g0 %nick
     }
