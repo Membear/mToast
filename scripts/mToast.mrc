@@ -94,6 +94,10 @@ alias mToast.ShowToastXml {
 ;;            Audio - Number - Optional
 ;;                Range: 0 (default) - 25 (silent)
 ;;                See: https://docs.microsoft.com/en-us/uwp/schemas/tiles/toastschema/element-audio
+;;            Duration - String - Optional
+;;                Values: short | long
+;;            Scenario - String - Optional
+;;                Values: default | alarm | reminder | incomingCall
 ;;            Xml - String - Optional
 ;;                Other elements are ignored when using this property
 ;;            Group - String - Optional

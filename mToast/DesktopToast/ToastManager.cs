@@ -130,7 +130,17 @@ namespace DesktopToast
 		private static XmlDocument ComposeVisualForWin10(ToastRequest request)
 		{
 			var document = new XmlDocument();
-			document.AppendChild(document.CreateElement("toast"));
+
+            var toastElement = document.CreateElement("toast");
+            if (!string.IsNullOrWhiteSpace(request.Duration))
+            {
+                toastElement.SetAttribute("duration", request.Duration);
+            }
+            if (!string.IsNullOrWhiteSpace(request.Scenario))
+            {
+                toastElement.SetAttribute("scenario", request.Scenario);
+            }
+            document.AppendChild(toastElement);
 
 			var visualElement = document.CreateElement("visual");
 			document.DocumentElement.AppendChild(visualElement);

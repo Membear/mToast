@@ -45,6 +45,18 @@ namespace DesktopToast
 		}
 		private IList<string> _bodyList;
 
+        /// <summary>
+        /// Duration attribute for toast element
+        /// </summary>
+        [DataMember]
+        public string Duration { get; set; }
+
+        /// <summary>
+        /// Scenario attribute for toast element
+        /// </summary>
+        [DataMember]
+        public string Scenario { get; set; }
+
 		/// <summary>
 		/// Logo image file path of toast (optional)
 		/// </summary>
