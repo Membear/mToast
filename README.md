@@ -21,3 +21,4 @@ Windows toast notifications for mIRC
 * [3F/DllExport](https://github.com/3F/DllExport)
 * [emoacht/DesktopToast](https://github.com/emoacht/DesktopToast)
 * [Toast design](https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notifications/adaptive-interactive-toasts)
+* [Toast schema](https://docs.microsoft.com/en-us/windows/uwp/design/shell/tiles-and-notifications/toast-xml-schema)
