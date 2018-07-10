@@ -120,7 +120,7 @@ alias mToast.ShowToastJson {
 ;;    Clears all notifications created by this application
 ;;
 alias mToast.Clear {
-  noop $dll($mToast_dll,Clear,$null)
+  noop $dll($mToast_dll,Clear,)
 }
 
 
