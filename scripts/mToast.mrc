@@ -332,10 +332,21 @@ on *:active:?:{
   mToast.RemoveGroup $active
 }
 
+alias b {
+  var %file
+  if ($hget(mtoast.user.icons,$me)) { var %file = $v1 }
+  elseif ($findfile($scriptdiruser.icons,$me $+ .*,1)) { var %file = $v1 }
+
+  if (%file) hadd -m mtoast.user.icons $me %file
+  return %file
+}
+
 ; User icons
 alias -l user.icon {
-  var %file = $+($scriptdir,user.icons\,$nick,.jpg)
+  var %file = $+($scriptdir,user.icons\,$nick,.png)
+  if ($isfile(%file)) { return %file }
 
-  if ($isfile(%file)) return %file
+  var %file = $+($scriptdir,user.icons\,$nick,.jpg)
+  if ($isfile(%file)) { return %file } 
 }
 #mToast.Module.PM end
