@@ -297,7 +297,7 @@ alias mToast.pm.callback {
         while (%i <= %t) { msg %nick $gettok(%reply,%i,13) | inc %i }
       }
       flash -c
-      window -g0 %nick
+      if ($window(%nick)) window -g0 %nick
     }
     elseif (%action == view) {
       scid %cid
