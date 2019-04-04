@@ -118,10 +118,10 @@ namespace MircSharp
         
         void InitMapFile(ref IntPtr cIndex, ref IntPtr hFileMap, ref IntPtr pView)
         {
-            int error = 0;
             var r = new Random();
-            
+
             int index = r.Next(1, int.MaxValue);
+            int error;
 
             do
             {
@@ -141,7 +141,7 @@ namespace MircSharp
                 else if (error > 0)
                 {
                     return;
-                }                
+                }
 
             } while (error == NativeMethods.ERROR_ALREADY_EXISTS);
 

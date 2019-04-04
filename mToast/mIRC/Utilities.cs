@@ -38,11 +38,9 @@ namespace MircSharp
         /// <param name="input">string to pass</param>
         public static void SetData(ref IntPtr data, in string input)
         {
-            IntPtr pData = IntPtr.Zero;
+            IntPtr pData = Marshal.StringToHGlobalUni(input);
 
-            pData = Marshal.StringToHGlobalUni(input);
             NativeMethods.MemCopy(data, pData, (uint)(input.Length + 1) * sizeof(char));
-
             Marshal.FreeHGlobal(pData);
         }
 
