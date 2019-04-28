@@ -290,12 +290,10 @@ alias mToast.pm.callback {
       var %reply = $json.unescape($regml(1))
 
       scid %cid
-      if ($chr(13) !isin %reply) { msg %nick %reply }
-      else {
-        var %t = $numtok(%reply,13)
-        var %i = 1
-        while (%i <= %t) { msg %nick $gettok(%reply,%i,13) | inc %i }
-      }
+      
+      tokenize 13 %reply
+      msg %nick $*
+
       flash -c
       if ($window(%nick)) window -g0 %nick
     }
