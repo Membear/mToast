@@ -234,7 +234,7 @@ alias xml.encode {
   return %ret
 }
 
-alias -l json.encode {
+alias json.encode {
   var %ret = $regsubex($strip($1-),/[\x00-\x19]/sugi,)
   return $replacex(%ret,",\",\,\\)
 }
@@ -261,6 +261,7 @@ on *:text:*:?:{
   if ($appactive) return
   if ($halted) return
   if ($msgstamp) && ($calc($ctime - $msgstamp) > 10) { return }
+  if ($left($nick,1) == *) return
 
   var %logo = $iif($user.icon($nick),$v1,$mirc.png)
 
